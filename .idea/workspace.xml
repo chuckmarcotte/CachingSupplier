@@ -5,16 +5,19 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="72795c04-4037-4d3a-8224-c5b42a406867" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/marvinware/sqlutils/ImmutableArray.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/marvinware/sqlutils/ImmutableBlob.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/marvinware/sqlutils/ImmutableClob.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/marvinware/sqlutils/ImmutableStruct.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/marvinware/sqlutils/ImmutableSerializableDate.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/marvinware/sqlutils/ImmutableDate.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/marvinware/sqlutils/ImmutableSerializableTime.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/marvinware/sqlutils/ImmutableTime.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/marvinware/sqlutils/ImmutableSerializableTimestamp.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/marvinware/sqlutils/ImmutableTimestamp.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/marvinware/sqlutils/SimpleTable.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/marvinware/sqlutils/ImmutableTable.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/CachingSupplier/.idea/modules.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/CachingSupplier/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CachingSupplier/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/CachingSupplier/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/CachingSupplier/.idea/gradle.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/CachingSupplier/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/CachingSupplier/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/CachingSupplier/build.gradle" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/CachingSupplier/gradle/wrapper/gradle-wrapper.jar" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/CachingSupplier/gradle/wrapper/gradle-wrapper.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/CachingSupplier/gradlew" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/CachingSupplier/gradlew.bat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/CachingSupplier/settings.gradle" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -84,12 +87,12 @@
     &quot;assignee&quot;: &quot;chuckmarcotte&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/chuckmarcotte/Pacer.git&quot;,
-    &quot;accountId&quot;: &quot;5018a48d-1744-43f0-961a-44c4ba19259c&quot;
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/chuckmarcotte/CachingSupplier.git",
+    "accountId": "5018a48d-1744-43f0-961a-44c4ba19259c"
   }
-}</component>
+}]]></component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 3
 }</component>
