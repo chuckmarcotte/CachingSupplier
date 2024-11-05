@@ -1,7 +1,7 @@
 package marvinware.sqlutils;
 
-import java.io.*;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.*;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -10,19 +10,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class SimpleTable implements Serializable, Cloneable {
-    private Object[][] table;
-    private final String[] columnHeaders;
+public class ImmutableTable {
+    private final Object[][] table;
     private final int[] columnTypes;
 
     private final Map<Integer, String> colIndexToName = new HashMap<>();
     private final Map<String, Integer> colNameToIndex = new HashMap<>();
 
-    public SimpleTable(ResultSet rset) throws SQLException {
+    public ImmutableTable(ResultSet rset) throws SQLException {
         ResultSetMetaData resultSetMetaData = rset.getMetaData();
         int colCnt = resultSetMetaData.getColumnCount();
         table = new Object[colCnt][];
-        columnHeaders = new String[colCnt];
+        String[] columnHeaders = new String[colCnt];
         columnTypes = new int[colCnt];
 
         for (int c=0; c < colCnt; c++) {
@@ -37,37 +36,24 @@ public class SimpleTable implements Serializable, Cloneable {
             while (rset.next()) {
                 Object val = rset.getObject(c+1);
                 if (val instanceof Date) {
-                    val = new ImmutableSerializableDate((java.sql.Date) val);
-                }
-                if (val instanceof Time) {
-                    val = new ImmutableSerializableTime((java.sql.Time) val);
-                }
-                if (val instanceof Timestamp) {
-                    val = new ImmutableSerializableTimestamp((java.sql.Timestamp) val);
+                    val = new ImmutableDate((java.sql.Date) val);
+                } else if (val instanceof Time) {
+                    val = new ImmutableTime((java.sql.Time) val);
+                } else if (val instanceof Timestamp) {
+                    val = new ImmutableTimestamp((java.sql.Timestamp) val);
+                } else if (val instanceof Blob) {
+                    val = new ImmutableBlob((java.sql.Blob) val);
+                } else if (val instanceof Clob) {
+                    val = new ImmutableClob((java.sql.Clob) val);
+                } else if (val instanceof Struct) {
+                    val = new ImmutableStruct((java.sql.Struct) val);
+                } else if (val instanceof Array) {
+                    val = new ImmutableArray((java.sql.Array) val);
                 }
                 colVals.add(rset.wasNull() ? null : val);
             }
             table[c] = colVals.toArray();
             colVals.clear();
-        }
-    }
-
-    @Override
-    protected Object clone() {
-        return deepClone(this);
-    }
-
-    public static Object deepClone(Object object) {
-        try {
-            ByteArrayOutputStream baOs = new ByteArrayOutputStream();
-            ObjectOutputStream oOs = new ObjectOutputStream(baOs);
-            oOs.writeObject(object);
-            ByteArrayInputStream baIs = new ByteArrayInputStream(baOs.toByteArray());
-            ObjectInputStream oIs = new ObjectInputStream(baIs);
-            return oIs.readObject();
-        }
-        catch (Exception e) {
-            throw new RuntimeException("deepClone() failed: ", e);
         }
     }
 
@@ -80,10 +66,10 @@ public class SimpleTable implements Serializable, Cloneable {
     }
 
     private void checkIndexes(int columnIndex, int rowIndex) {
-        if (table == null || columnIndex > getColumnCount() || columnIndex < 1) {
+        if (columnIndex > getColumnCount() || columnIndex < 1) {
             throw new RuntimeException("Column index not in the range 1 to " + getColumnCount() + " (inclusive)");
         }
-        if (table == null || rowIndex > getRowCount() || rowIndex < 1) {
+        if (rowIndex > getRowCount() || rowIndex < 1) {
             throw new RuntimeException("Row index not in the range 1 to " + getRowCount() + " (inclusive)");
         }
     }
@@ -110,7 +96,6 @@ public class SimpleTable implements Serializable, Cloneable {
         }
     }
 
-
     public byte getByte(int columnIndex, int rowIndex) throws SQLException {
         checkIndexes(columnIndex, rowIndex);
         Object value = table[columnIndex-1][rowIndex-1];
@@ -126,7 +111,6 @@ public class SimpleTable implements Serializable, Cloneable {
             throw new SQLException(String.format("Invalid byte value (%s) for column index (%d)", value.toString().trim(), columnIndex));
         }
     }
-
 
     public short getShort(int columnIndex, int rowIndex) throws SQLException {
         checkIndexes(columnIndex, rowIndex);
@@ -221,13 +205,14 @@ public class SimpleTable implements Serializable, Cloneable {
         }
         if (value instanceof BigDecimal) {
             ret = (BigDecimal) value;
+        } else {
+            try {
+                ret = new BigDecimal(value.toString());
+            } catch (NumberFormatException ex) {
+                throw new SQLException(String.format("Invalid BigDecimal value (%s) for column index (%d)", value.toString().trim(), columnIndex));
+            }
         }
-        try {
-            ret = new BigDecimal(value.toString());
-        } catch (NumberFormatException ex) {
-            throw new SQLException(String.format("Invalid BigDecimal value (%s) for column index (%d)", value.toString().trim(), columnIndex));
-        }
-        ret = ret.setScale(scale);
+        ret = ret.setScale(scale, RoundingMode.HALF_EVEN);
         return ret;
     }
 
@@ -240,8 +225,6 @@ public class SimpleTable implements Serializable, Cloneable {
 
     public byte[] getBytes(int columnIndex, int rowIndex) throws SQLException {
         checkIndexes(columnIndex, rowIndex);
-        Object value = table[columnIndex-1][rowIndex-1];
-        BigDecimal ret;
 
         if (!isBinary(columnTypes[columnIndex])) {
             throw new SQLException(String.format("Column (%s) at index (%d) is not a binary column", colIndexToName.get(columnIndex), columnIndex));
@@ -347,67 +330,67 @@ public class SimpleTable implements Serializable, Cloneable {
     }
 
     public String getString(String columnLabel, int rowIndex) throws SQLException {
-        return getString((int) colNameToIndex.get(columnLabel), rowIndex);
+        return getString(colNameToIndex.get(columnLabel), rowIndex);
     }
 
 
     public boolean getBoolean(String columnLabel, int rowIndex) throws SQLException {
-        return getBoolean((int) colNameToIndex.get(columnLabel), rowIndex);
+        return getBoolean(colNameToIndex.get(columnLabel), rowIndex);
     }
 
 
     public byte getByte(String columnLabel, int rowIndex) throws SQLException {
-        return getByte((int) colNameToIndex.get(columnLabel), rowIndex);
+        return getByte(colNameToIndex.get(columnLabel), rowIndex);
     }
 
 
     public short getShort(String columnLabel, int rowIndex) throws SQLException {
-        return getShort((int) colNameToIndex.get(columnLabel), rowIndex);
+        return getShort(colNameToIndex.get(columnLabel), rowIndex);
     }
 
 
     public int getInt(String columnLabel, int rowIndex) throws SQLException {
-        return getInt((int) colNameToIndex.get(columnLabel), rowIndex);
+        return getInt(colNameToIndex.get(columnLabel), rowIndex);
     }
 
 
     public long getLong(String columnLabel, int rowIndex) throws SQLException {
-        return getLong((int) colNameToIndex.get(columnLabel), rowIndex);
+        return getLong(colNameToIndex.get(columnLabel), rowIndex);
     }
 
 
     public float getFloat(String columnLabel, int rowIndex) throws SQLException {
-        return getFloat((int) colNameToIndex.get(columnLabel), rowIndex);
+        return getFloat(colNameToIndex.get(columnLabel), rowIndex);
     }
 
 
     public double getDouble(String columnLabel, int rowIndex) throws SQLException {
-        return getDouble((int) colNameToIndex.get(columnLabel), rowIndex);
+        return getDouble(colNameToIndex.get(columnLabel), rowIndex);
     }
 
 
     public BigDecimal getBigDecimal(String columnLabel, int rowIndex, int scale) throws SQLException {
-        return getBigDecimal((int) colNameToIndex.get(columnLabel), rowIndex, scale);
+        return getBigDecimal(colNameToIndex.get(columnLabel), rowIndex, scale);
     }
 
 
     public byte[] getBytes(String columnLabel, int rowIndex) throws SQLException {
-        return getBytes((int) colNameToIndex.get(columnLabel), rowIndex);
+        return getBytes(colNameToIndex.get(columnLabel), rowIndex);
     }
 
 
     public Date getDate(String columnLabel, int rowIndex) throws SQLException {
-        return getDate((int) colNameToIndex.get(columnLabel), rowIndex);
+        return getDate(colNameToIndex.get(columnLabel), rowIndex);
     }
 
 
     public Time getTime(String columnLabel, int rowIndex) throws SQLException {
-        return getTime((int) colNameToIndex.get(columnLabel), rowIndex);
+        return getTime(colNameToIndex.get(columnLabel), rowIndex);
     }
 
 
     public Timestamp getTimestamp(String columnLabel, int rowIndex) throws SQLException {
-        return getTimestamp((int) colNameToIndex.get(columnLabel), rowIndex);
+        return getTimestamp(colNameToIndex.get(columnLabel), rowIndex);
     }
 
 
@@ -435,14 +418,13 @@ public class SimpleTable implements Serializable, Cloneable {
             return BigDecimal.ZERO;
         }
         if (value instanceof BigDecimal) {
-            ret = (BigDecimal) value;
+            return (BigDecimal) value;
         }
         try {
-            ret = new BigDecimal(value.toString());
+            return new BigDecimal(value.toString());
         } catch (NumberFormatException ex) {
             throw new SQLException(String.format("Invalid BigDecimal value (%s) for column index (%d)", value.toString().trim(), columnIndex));
         }
-        return ret;
     }
 
 

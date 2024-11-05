@@ -5,24 +5,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="72795c04-4037-4d3a-8224-c5b42a406867" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/uiDesigner.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build.gradle" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.jar" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/gradlew" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/gradlew.bat" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/settings.gradle" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/marvinware/CachingSupplier.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/marvinware/CachingSupplierManager.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/marvinware/sqlutils/ImmutableCachedRowSet.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/marvinware/sqlutils/ImmutableSerializableTimestamp.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/marvinware/sqlutils/SimpleTable.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/marvinware/utils/CompletableFutureWithTS.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/marvinware/sqlutils/ImmutableArray.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/marvinware/sqlutils/ImmutableBlob.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/marvinware/sqlutils/ImmutableClob.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/marvinware/sqlutils/ImmutableStruct.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/marvinware/sqlutils/ImmutableSerializableDate.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/marvinware/sqlutils/ImmutableDate.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/marvinware/sqlutils/ImmutableSerializableTime.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/marvinware/sqlutils/ImmutableTime.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/marvinware/sqlutils/ImmutableSerializableTimestamp.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/marvinware/sqlutils/ImmutableTimestamp.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/marvinware/sqlutils/SimpleTable.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/marvinware/sqlutils/ImmutableTable.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -86,21 +78,21 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "chuckmarcotte"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;chuckmarcotte&quot;
   }
-}]]></component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/chuckmarcotte/Pacer.git",
-    "accountId": "5018a48d-1744-43f0-961a-44c4ba19259c"
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/chuckmarcotte/Pacer.git&quot;,
+    &quot;accountId&quot;: &quot;5018a48d-1744-43f0-961a-44c4ba19259c&quot;
   }
-}]]></component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 3
-}]]></component>
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 3
+}</component>
   <component name="ProjectId" id="2oOKRn4M4qYeinjL5Bey2S1YgRd" />
   <component name="ProjectViewState">
     <option name="autoscrollFromSource" value="true" />
@@ -108,15 +100,17 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Gradle.CachingSupplier [build].executor": "Run",
-    "Gradle.CachingSupplier [clean].executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "main",
-    "kotlin-language-version-configured": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Gradle.Build CachingSupplier.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CachingSupplier [build].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CachingSupplier [clean].executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected="Gradle.CachingSupplier [build]">
     <configuration name="CachingSupplier [build]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>

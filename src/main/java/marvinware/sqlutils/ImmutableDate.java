@@ -2,13 +2,13 @@ package marvinware.sqlutils;
 
 import java.io.Serializable;
 
-public class ImmutableSerializableDate extends java.sql.Date implements Serializable {
+public class ImmutableDate extends java.sql.Date implements Serializable {
 
-    public ImmutableSerializableDate(long date) {
+    public ImmutableDate(long date) {
         super(date);
     }
 
-    public ImmutableSerializableDate(java.sql.Date date) {
+    public ImmutableDate(java.sql.Date date) {
         super(date.getTime());
     }
 
