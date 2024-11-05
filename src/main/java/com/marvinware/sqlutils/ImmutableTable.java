@@ -1,4 +1,4 @@
-package marvinware.sqlutils;
+package com.marvinware.sqlutils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;

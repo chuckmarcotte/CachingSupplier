@@ -1,4 +1,4 @@
-package marvinware;
+package com.marvinware;
 
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;

@@ -1,16 +1,16 @@
-package marvinware.sqlutils;
+package com.marvinware.sqlutils;
 
 import java.io.Serializable;
 
-public class ImmutableTime extends java.sql.Time implements Serializable {
-    public ImmutableTime(long time) {
-        super(time);
+public class ImmutableDate extends java.sql.Date implements Serializable {
+
+    public ImmutableDate(long date) {
+        super(date);
     }
 
-    public ImmutableTime(java.sql.Time time) {
-        super(time.getTime());
+    public ImmutableDate(java.sql.Date date) {
+        super(date.getTime());
     }
-
 
     @Override
     public void setTime(long time) {
@@ -46,6 +46,5 @@ public class ImmutableTime extends java.sql.Time implements Serializable {
     public void setYear(int year) {
         throw new RuntimeException("Immutable sql time/date/timestamp");
     }
-
 
 }

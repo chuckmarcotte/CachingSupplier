@@ -1,4 +1,4 @@
-package marvinware.sqlutils;
+package com.marvinware.sqlutils;
 
 import java.sql.Array;
 import java.sql.ResultSet;

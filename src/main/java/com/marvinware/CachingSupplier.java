@@ -1,6 +1,6 @@
-package marvinware;
+package com.marvinware;
 
-import marvinware.utils.CompletableFutureWithTS;
+import com.marvinware.utils.CompletableFutureWithTS;
 
 import java.util.concurrent.*;
 import java.util.function.Supplier;
