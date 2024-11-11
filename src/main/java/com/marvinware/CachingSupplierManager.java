@@ -87,18 +87,15 @@ public class CachingSupplierManager<T> {
 
     public static void main(String[] args) {
 
-        Supplier<Long> supImpl = new Supplier<>() {
-            @Override
-            public Long get() {
-                Random r = new Random();
-                int i = r.nextInt(20);
-                try {
-                    Thread.sleep((i + 10) * 100);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-                return System.currentTimeMillis();
+        Supplier<Long> supImpl = () -> {
+            Random r = new Random();
+            int i = r.nextInt(20);
+            try {
+                Thread.sleep((i + 10) * 100);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
+            return System.currentTimeMillis();
         };
 
         CachingSupplier.SupplierConfig config = new CachingSupplier.SupplierConfig() {
@@ -124,15 +121,15 @@ public class CachingSupplierManager<T> {
             threads[t] = new Thread(lr);
         }
 
-        for (int t = 0; t < threads.length; t++) {
-            threads[t].start();
+        for (Thread thread : threads) {
+            thread.start();
         }
 
         System.out.println("\n" + threads.length + " threads started!");
 
-        for (int t = 0; t < threads.length; t++) {
+        for (Thread thread : threads) {
             try {
-                threads[t].join();
+                thread.join();
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
