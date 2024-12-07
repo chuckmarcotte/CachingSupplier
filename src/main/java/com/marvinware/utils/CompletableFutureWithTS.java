@@ -17,6 +17,10 @@ public class CompletableFutureWithTS<T> extends CompletableFuture<T> {
         return completeTS;
     }
 
+    public synchronized long getStartTS() {
+        return startTS;
+    }
+
     public synchronized long supplierFetchTime() {
         return completeTS <= 0 ? -1 : completeTS - startTS;
     }

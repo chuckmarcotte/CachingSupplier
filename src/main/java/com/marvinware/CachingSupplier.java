@@ -12,6 +12,7 @@ public class CachingSupplier<T> implements Supplier<T> {
     private final SupplierConfig config;
     private final Supplier<T> supplier;
     private int supplierRunCount = 0;
+    private long lastStart = 0L;
     private SupplierState state = SupplierState.init;
     private CompletableFutureWithTS<T> lastFuture;
     private final Stats stats;
@@ -38,23 +39,33 @@ public class CachingSupplier<T> implements Supplier<T> {
         boolean fetchNew = false;
 
         synchronized (this) {
+            long now = System.currentTimeMillis();
             localFuture = lastFuture;
-            if (
-                    state == SupplierState.init ||
-                            (state == SupplierState.fetching && supplierRunCount < config.getMaxRunningSuppliers()) ||
-                            (state == SupplierState.cached && isCacheStale(localFuture))
-            ) {
-                fetchNew = true;
-                supplierRunCount++;
-                state = SupplierState.fetching;
-                localFuture = lastFuture = new CompletableFutureWithTS<>();
-                localFuture.setStartTS(System.currentTimeMillis());
-            } else if (state == SupplierState.fetching) {
-                stats.incrementResultFromCachingSupplier();
-                localFuture = lastFuture;
-            } else if (state == SupplierState.cached) {
-                stats.incrementResultFromCache();
-                localFuture = lastFuture;
+
+            switch(state) {
+                case init:
+                    fetchNew = true;
+                    localFuture = getCompletableFutureWithTS(now);
+                    break;
+
+                case fetching:
+                    if (supplierRunCount < config.getMaxRunningSuppliers() &&
+                            ((now - lastStart) >= config.getStartNewSupplierDelay())) {
+                        fetchNew = true;
+                        localFuture = getCompletableFutureWithTS(now);
+                    } else {
+                        stats.incrementResultFromCachingSupplier();
+                    }
+                    break;
+
+                case cached:
+                    if (isCacheStale(localFuture)) {
+                        fetchNew = true;
+                        localFuture = getCompletableFutureWithTS(now);
+                    } else {
+                        stats.incrementResultFromCache();
+                    }
+                    break;
             }
         } // end of synchronized
 
@@ -63,6 +74,7 @@ public class CachingSupplier<T> implements Supplier<T> {
             result = supplier.get();
             synchronized (this) {
                 supplierRunCount--;
+                lastStart = System.currentTimeMillis();
                 localFuture.complete(result);
                 stats.incrementResultFromSupplier();
                 if (config.isCachingEnabled()) {
@@ -83,19 +95,17 @@ public class CachingSupplier<T> implements Supplier<T> {
         return result;
     }
 
-    public static void main(String[] args) {
-        CachingSupplier<String> cs = new CachingSupplier<>(() -> {
-            String result;
-
-            // do a lookup of a result object
-            result = null;  // result = ...
-
-            return result;
-        });
+    private CompletableFutureWithTS<T> getCompletableFutureWithTS(long now) {
+        CompletableFutureWithTS<T> localFuture;
+        supplierRunCount++;
+        state = SupplierState.fetching;
+        localFuture = lastFuture = new CompletableFutureWithTS<>();
+        localFuture.setStartTS(now);
+        return localFuture;
     }
 
     public synchronized boolean isCacheStale(CompletableFutureWithTS<T> f) {
-        return !config.isCachingEnabled() || getAgeOfResult(f) > config.getCachedResultsTTL();
+        return !config.isCachingEnabled() || f == null || getAgeOfResult(f) > config.getCachedResultsTTL();
     }
 
     public synchronized long getAgeOfResult(CompletableFutureWithTS<T> f) {
@@ -106,27 +116,31 @@ public class CachingSupplier<T> implements Supplier<T> {
         return stats.getJsonStats();
     }
 
-    public interface SupplierConfig {
-        long getCachedResultsTTL();
-
-        int getMaxRunningSuppliers();
-
-        default boolean isCachingEnabled() {
-            return getCachedResultsTTL() > -1;
+    public synchronized void clearCacheIfStale() {
+        if (config.isCachingEnabled() && lastFuture != null && getAgeOfResult(lastFuture) > config.getCachedResultsTTL()) {
+            state = SupplierState.init;
+            lastFuture = null;
+            System.out.println("Cleared cache for CachedSupplier with id: " + supplierId);
         }
     }
 
-    static SupplierConfig defaultConfig = new SupplierConfig() {
-        @Override
-        public long getCachedResultsTTL() {
-            return 2000;
-        }
+    public interface SupplierConfig {
+        default long getCachedResultsTTL()  { return 100; }
 
-        @Override
-        public int getMaxRunningSuppliers() {
-            return 2;
+        default int getMaxRunningSuppliers()  { return 5; }
+
+        default long getStartNewSupplierDelay() { return 100; }
+
+        default boolean isCacheCleanupThreadEnabled() { return false; }
+
+        default long pollingPeriodForCleanupThread() { return 5000; }
+
+        default boolean isCachingEnabled() {
+            return getCachedResultsTTL() > 0;
         }
-    };
+    }
+
+    public static SupplierConfig defaultConfig = new SupplierConfig() { };
 
     public enum SupplierState {
         init,
