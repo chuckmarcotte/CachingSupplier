@@ -19,7 +19,7 @@ public class CachingSupplierTest {
             }
 
             @Override
-            public int getMaxRunningSuppliers() {
+            public int getMaxConcurrentRunningSuppliers() {
                 return 2;
             }
         };

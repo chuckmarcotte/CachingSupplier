@@ -1,13 +1,15 @@
 package com.marvinware;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.Random;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CachingSupplierManagerTest {
 
     static final int threadCount = 50000;
-    static final int cacheTTL = 0;
+    static final System.Logger logger = System.getLogger(CachingSupplierManagerTest.class.getName());
 
     @Test
     public void loadTest() {
@@ -64,7 +66,7 @@ public class CachingSupplierManagerTest {
             thread.start();
         }
 
-        System.out.println("\n" + threads.length + " threads started!");
+        logger.log(System.Logger.Level.INFO, threads.length + " threads started!");
 
         for (Thread thread : threads) {
             try {
@@ -74,15 +76,15 @@ public class CachingSupplierManagerTest {
             }
         }
 
-        System.out.println("\n" + manager.getStatsJson("supplier1"));
+        logger.log(System.Logger.Level.INFO, manager.getStatsJson("supplier1"));
 
         try {
             Thread.sleep(6000);
         } catch (InterruptedException ignored) { }
 
         for (int j=0; j < threads.length; j++) {
-            assert results[j] != null;
-            assert results[j] <= System.currentTimeMillis();
+            assertNotEquals(null, results[j]);
+            assertTrue(results[j] <= System.currentTimeMillis());
         }
 
     }

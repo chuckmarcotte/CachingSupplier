@@ -8,6 +8,8 @@ import java.util.function.Supplier;
 
 public class CachingSupplier<T> implements Supplier<T> {
 
+    private static final System.Logger logger = System.getLogger(CachingSupplier.class.getName());
+
     private final String supplierId;
     private final SupplierConfig config;
     private final Supplier<T> supplier;
@@ -18,6 +20,7 @@ public class CachingSupplier<T> implements Supplier<T> {
     private final Stats stats;
 
 
+    @SuppressWarnings("unused")
     public CachingSupplier(Supplier<T> supplier) {
         this("UNKNOWN", defaultConfig, supplier);
     }
@@ -29,6 +32,7 @@ public class CachingSupplier<T> implements Supplier<T> {
         this.stats = new Stats(supplierId);
     }
 
+    @SuppressWarnings("unused")
     public String getSupplierId() {
         return supplierId;
     }
@@ -49,8 +53,8 @@ public class CachingSupplier<T> implements Supplier<T> {
                     break;
 
                 case fetching:
-                    if (supplierRunCount < config.getMaxRunningSuppliers() &&
-                            ((now - lastStart) >= config.getStartNewSupplierDelay())) {
+                    if (supplierRunCount < config.getMaxConcurrentRunningSuppliers() &&
+                            ((now - lastStart) >= config.getNewSupplierStaggerDelay())) {
                         fetchNew = true;
                         localFuture = getCompletableFutureWithTS(now);
                     } else {
@@ -90,7 +94,7 @@ public class CachingSupplier<T> implements Supplier<T> {
                 throw new RuntimeException(e);
             }
         }
-        stats.updateStats(localFuture.supplierFetchTime(), getAgeOfResult(localFuture));
+        stats.updateStats(localFuture.supplierFetchTime(), getAgeOfResult(localFuture), supplierRunCount);
 
         return result;
     }
@@ -120,24 +124,22 @@ public class CachingSupplier<T> implements Supplier<T> {
         if (config.isCachingEnabled() && lastFuture != null && getAgeOfResult(lastFuture) > config.getCachedResultsTTL()) {
             state = SupplierState.init;
             lastFuture = null;
-            System.out.println("Cleared cache for CachedSupplier with id: " + supplierId);
+            logger.log(System.Logger.Level.DEBUG, "Cleared cache for CachedSupplier with id: " + supplierId);
         }
     }
 
     public interface SupplierConfig {
-        default long getCachedResultsTTL()  { return 100; }
+        default long getCachedResultsTTL()  { return 500; }
 
-        default int getMaxRunningSuppliers()  { return 5; }
+        default int getMaxConcurrentRunningSuppliers()  { return 5; }
 
-        default long getStartNewSupplierDelay() { return 100; }
+        default long getNewSupplierStaggerDelay() { return 50; }
 
         default boolean isCacheCleanupThreadEnabled() { return false; }
 
         default long pollingPeriodForCleanupThread() { return 5000; }
 
-        default boolean isCachingEnabled() {
-            return getCachedResultsTTL() > 0;
-        }
+        default boolean isCachingEnabled() { return getCachedResultsTTL() > 0; }
     }
 
     public static SupplierConfig defaultConfig = new SupplierConfig() { };
@@ -155,6 +157,7 @@ public class CachingSupplier<T> implements Supplier<T> {
         private long resultFromCache = 0;
         private long resultFromCachingSupplier = 0;
         private long resultFromSupplier = 0;
+        private long maxConcurrentSuppliers = 0;
         private long maxSupplierTime = 0;
         private long maxResultAge = 0;
         private long minSupplierTime = Long.MAX_VALUE;
@@ -186,11 +189,13 @@ public class CachingSupplier<T> implements Supplier<T> {
                             resultFromCachingSupplier > LIMIT ||
                             resultFromSupplier > LIMIT ||
                             totalRunTime > LIMIT ||
+                            maxConcurrentSuppliers > LIMIT ||
                             totalCnt > LIMIT
             ) {
                 resultFromCache = 0;
                 resultFromCachingSupplier = 0;
                 resultFromSupplier = 0;
+                maxConcurrentSuppliers = 0;
                 maxSupplierTime = 0;
                 minSupplierTime = Long.MAX_VALUE;
                 maxResultAge = 0;
@@ -201,14 +206,16 @@ public class CachingSupplier<T> implements Supplier<T> {
 
         public synchronized String getJsonStats() {
             return "{\"supplierId\":\"" + supplierId + "\",\"count\":" + totalCnt + ",\"servedByCache\":" + resultFromCache + ",\"servedByCachingSupplier\":" + resultFromCachingSupplier + ",\"servedBySupplier\":" +
-                    resultFromSupplier + ",\"maxSupplierTime\":" + maxSupplierTime + ",\"minSupplierTime\":" + minSupplierTime + ",\"maxResultAge\":" + maxResultAge + ",\"avgRunTime\":" + (totalRunTime / totalCnt) + "}";
+                    resultFromSupplier + ",\"maxConcurrentSuppliers\":" + maxConcurrentSuppliers + ",\"maxSupplierTime\":" + maxSupplierTime + ",\"minSupplierTime\":" + minSupplierTime + ",\"maxResultAge\":" + maxResultAge + ",\"avgRunTime\":" + (totalRunTime / totalCnt) + "}";
         }
 
-        private synchronized void updateStats(long fetchTime, long ageOfResult) {
+        @SuppressWarnings("ManualMinMaxCalculation")
+        private synchronized void updateStats(long fetchTime, long ageOfResult, long concurrentSupplierCount) {
             handleRollover();
             maxSupplierTime = maxSupplierTime > fetchTime ? maxSupplierTime : fetchTime;
             minSupplierTime = minSupplierTime < fetchTime ? minSupplierTime : fetchTime;
             maxResultAge = maxResultAge > ageOfResult ? maxResultAge : ageOfResult;
+            maxConcurrentSuppliers = maxConcurrentSuppliers < concurrentSupplierCount ? concurrentSupplierCount : maxConcurrentSuppliers;
             totalCnt++;
             totalRunTime += fetchTime;
         }
