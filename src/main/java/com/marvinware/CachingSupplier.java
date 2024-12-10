@@ -40,63 +40,68 @@ public class CachingSupplier<T> implements Supplier<T> {
     @Override
     public T get() {
         CompletableFutureWithTS<T> localFuture;
-        boolean fetchNew = false;
+        boolean[] fetchNew = new boolean[1];
+        T supplierResult;
 
-        synchronized (this) {
-            long now = System.currentTimeMillis();
-            localFuture = lastFuture;
+        localFuture = processGet(fetchNew);
 
-            switch(state) {
-                case init:
-                    fetchNew = true;
-                    localFuture = getCompletableFutureWithTS(now);
-                    break;
-
-                case fetching:
-                    if (supplierRunCount < config.getMaxConcurrentRunningSuppliers() &&
-                            ((now - lastStart) >= config.getNewSupplierStaggerDelay())) {
-                        fetchNew = true;
-                        localFuture = getCompletableFutureWithTS(now);
-                    } else {
-                        stats.incrementResultFromCachingSupplier();
-                    }
-                    break;
-
-                case cached:
-                    if (isCacheStale(localFuture)) {
-                        fetchNew = true;
-                        localFuture = getCompletableFutureWithTS(now);
-                    } else {
-                        stats.incrementResultFromCache();
-                    }
-                    break;
-            }
-        } // end of synchronized
-
-        T result;
-        if (fetchNew) {
-            result = supplier.get();
-            synchronized (this) {
-                supplierRunCount--;
-                lastStart = System.currentTimeMillis();
-                localFuture.complete(result);
-                stats.incrementResultFromSupplier();
-                if (config.isCachingEnabled()) {
-                    state = SupplierState.cached;
-                } else {
-                    state = SupplierState.init;
-                }
-            }
+        if (fetchNew[0]) {
+            supplierResult = supplier.get();
+            updateState(localFuture, supplierResult);
         } else {
             try {
-                result = localFuture.get();
+                supplierResult = localFuture.get();
             } catch (ExecutionException | NullPointerException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
         }
         stats.updateStats(localFuture.supplierFetchTime(), getAgeOfResult(localFuture), supplierRunCount);
 
-        return result;
+        return supplierResult;
+    }
+
+    private synchronized CompletableFutureWithTS<T> processGet(boolean[] fetchNew) {
+        long now = System.currentTimeMillis();
+        CompletableFutureWithTS<T> localFuture = lastFuture;
+
+        switch(state) {
+            case init:
+                fetchNew[0] = true;
+                localFuture = getCompletableFutureWithTS(now);
+                break;
+
+            case fetching:
+                if (supplierRunCount < config.getMaxConcurrentRunningSuppliers() &&
+                        ((now - lastStart) >= config.getNewSupplierStaggerDelay())) {
+                    fetchNew[0] = true;
+                    localFuture = getCompletableFutureWithTS(now);
+                } else {
+                    stats.incrementResultFromCachingSupplier();
+                }
+                break;
+
+            case cached:
+                if (isCacheStale(lastFuture)) {
+                    fetchNew[0] = true;
+                    localFuture = getCompletableFutureWithTS(now);
+                } else {
+                    stats.incrementResultFromCache();
+                }
+                break;
+        }
+        return localFuture;
+    }
+
+    private synchronized void updateState(CompletableFutureWithTS<T> localFuture, T supplierResult) {
+        supplierRunCount--;
+        lastStart = System.currentTimeMillis();
+        localFuture.complete(supplierResult);
+        stats.incrementResultFromSupplier();
+        if (config.isCachingEnabled()) {
+            state = SupplierState.cached;
+        } else {
+            state = SupplierState.init;
+        }
     }
 
     private CompletableFutureWithTS<T> getCompletableFutureWithTS(long now) {
@@ -124,7 +129,7 @@ public class CachingSupplier<T> implements Supplier<T> {
         if (config.isCachingEnabled() && lastFuture != null && getAgeOfResult(lastFuture) > config.getCachedResultsTTL()) {
             state = SupplierState.init;
             lastFuture = null;
-            logger.log(System.Logger.Level.DEBUG, "Cleared cache for CachedSupplier with id: " + supplierId);
+            logger.log(System.Logger.Level.WARNING, "Cleared cache for CachedSupplier with id: " + supplierId);
         }
     }
 
