@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class CachingSupplierManagerTest {
 
-    static final int threadCount = 50000;
+    static final int threadCount = 20000;
     static final System.Logger logger = System.getLogger(CachingSupplierManagerTest.class.getName());
 
     @Test
@@ -48,9 +48,9 @@ public class CachingSupplierManagerTest {
             threads[tIndx] = new Thread(() -> {
                 Random r = new Random();
                 for (int i = 0; i < 3; i++) {
-                    int num = r.nextInt(5);
+                    int num = r.nextInt(100);
                     try {
-                        Thread.sleep(num * 10);
+                        Thread.sleep(num * 20);
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
@@ -70,22 +70,87 @@ public class CachingSupplierManagerTest {
 
         for (Thread thread : threads) {
             try {
-                thread.join();
+                int last = manager.getCurrentSupplierCount("supplier1");
+                int curr = last;
+                while (thread.isAlive()) {
+                    curr = manager.getCurrentSupplierCount("supplier1");
+                    if (last != curr) {
+                        last = curr;
+//                        logger.log(System.Logger.Level.INFO, curr);
+                    }
+                    thread.join(5);
+                }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
         }
 
+        //logger.log(System.Logger.Level.INFO, manager.getCurrentSupplierCount("supplier1"));
+
         logger.log(System.Logger.Level.INFO, manager.getStatsJson("supplier1"));
 
         try {
-            Thread.sleep(6000);
+            Thread.sleep(10000);
         } catch (InterruptedException ignored) { }
+
+//        logger.log(System.Logger.Level.INFO, manager.getCurrentSupplierCount("supplier1"));
 
         for (int j=0; j < threads.length; j++) {
             assertNotEquals(null, results[j]);
             assertTrue(results[j] <= System.currentTimeMillis());
         }
+
+        for (int t = 0; t < threads.length; t++) {
+            final int tIndx = t;
+            threads[tIndx] = new Thread(() -> {
+                Random r = new Random();
+                for (int i = 0; i < 3; i++) {
+                    int num = r.nextInt(100);
+                    try {
+                        Thread.sleep(num * 20);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    Long res = manager.get("supplier1");
+                    synchronized(results) {
+                        results[tIndx] = res;
+                    }
+                }
+            });
+        }
+
+        for (Thread thread : threads) {
+            thread.start();
+        }
+
+        logger.log(System.Logger.Level.INFO, threads.length + " threads started!");
+
+        for (Thread thread : threads) {
+            try {
+                int last = manager.getCurrentSupplierCount("supplier1");
+                int curr = last;
+                while (thread.isAlive()) {
+                    curr = manager.getCurrentSupplierCount("supplier1");
+                    if (last != curr) {
+                        last = curr;
+//                        logger.log(System.Logger.Level.INFO, curr);
+                    }
+                    thread.join(5);
+                }
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+//        logger.log(System.Logger.Level.INFO, manager.getCurrentSupplierCount("supplier1"));
+
+        logger.log(System.Logger.Level.INFO, manager.getStatsJson("supplier1"));
+
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException ignored) { }
+
+//        logger.log(System.Logger.Level.INFO, manager.getCurrentSupplierCount("supplier1"));
 
     }
 

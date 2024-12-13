@@ -4,13 +4,20 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 public class CompletableFutureWithTS<T> extends CompletableFuture<T> {
-    volatile long startTS = 0;
-    volatile long completeTS = 0;
+    private volatile long startTS = 0L;
+    private volatile long completeTS = 0L;
+    CompletableFutureWithTS<T> chainedFuture;
 
-    public CompletableFutureWithTS() {}
+    public CompletableFutureWithTS(CompletableFutureWithTS<T> chainedFuture) {
+        this.chainedFuture = chainedFuture;
+    }
 
     public synchronized void setStartTS(long ts) {
         this.startTS = ts;
+    }
+
+    public synchronized void setCompleteTS(long ts) {
+        this.completeTS = ts;
     }
 
     public synchronized long getCompleteTS() {
@@ -21,6 +28,14 @@ public class CompletableFutureWithTS<T> extends CompletableFuture<T> {
         return startTS;
     }
 
+    public synchronized long getChainedFutureStartTS() {
+        return (chainedFuture != null) ? chainedFuture.getStartTS() : 0;
+    }
+
+    public synchronized boolean isNotStarted() {
+        return completeTS == 0L && startTS == 0L;
+    }
+
     public synchronized long supplierFetchTime() {
         return completeTS <= 0 ? -1 : completeTS - startTS;
     }
@@ -28,8 +43,9 @@ public class CompletableFutureWithTS<T> extends CompletableFuture<T> {
     @Override
     public T get() throws InterruptedException, ExecutionException {
         T ret = super.get();
-        if (completeTS <= 0) {
-            completeTS = System.currentTimeMillis();
+
+        if (getCompleteTS() <= 0) {
+            setCompleteTS(System.currentTimeMillis());
         }
         return ret;
     }
@@ -37,18 +53,29 @@ public class CompletableFutureWithTS<T> extends CompletableFuture<T> {
     @Override
     public boolean complete(T value) {
         boolean ret = super.complete(value);
-        if (completeTS <= 0) {
-            completeTS = System.currentTimeMillis();
+        if (chainedFuture != null) {
+            chainedFuture.complete(value);
         }
+
+        if (getCompleteTS() <= 0) {
+            setCompleteTS(System.currentTimeMillis());
+        }
+
         return ret;
     }
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
         boolean ret = super.cancel(mayInterruptIfRunning);
-        if (completeTS <= 0) {
-            completeTS = System.currentTimeMillis();
+
+        if (chainedFuture != null) {
+            chainedFuture.cancel(mayInterruptIfRunning);
         }
+
+        if (getCompleteTS() <= 0) {
+            setCompleteTS(System.currentTimeMillis());
+        }
+
         return ret;
     }
 

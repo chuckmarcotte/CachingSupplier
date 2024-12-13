@@ -79,6 +79,11 @@ public class CachingSupplierManager<T> {
         return supplier.getJsonStats();
     }
 
+    public int getCurrentSupplierCount(String resourceId) {
+        CachingSupplier<T> supplier = cachingSuppliersByResourceId.get(resourceId);
+        return supplier.getCurrentSupplierCount();
+    }
+
     public T get(String resourceId) {
         CachingSupplier<T> cachingSupplier = cachingSuppliersByResourceId.get(resourceId);
         if (cachingSupplier == null) {
