@@ -1,30 +1,49 @@
 package com.marvinware;
 
-import com.marvinware.utils.CompletableFutureWithTS;
+import com.marvinware.utils.CompletableChainableThreadSafeFutureWithTS;
 
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
 
+/**
+ * The type Caching supplier.
+ *
+ * @param <T> the type parameter
+ */
 public class CachingSupplier<T> implements Supplier<T> {
 
+    /**
+     * The constant defaultConfig.
+     */
+    public static final SupplierConfig defaultConfig = new SupplierConfig() { };
     private static final System.Logger logger = System.getLogger(CachingSupplier.class.getName());
-
     private final String supplierId;
     private final SupplierConfig config;
     private final Supplier<T> supplier;
+    private final Stats stats;
     private volatile int supplierRunCount = 0;
     private long previousFutureStartTime = 0L;
     private SupplierState state = SupplierState.init;
-    private CompletableFutureWithTS<T> sharedFuture;
-    private final Stats stats;
+    private CompletableChainableThreadSafeFutureWithTS<T> sharedFuture;
 
-
+    /**
+     * Instantiates a new Caching supplier.
+     *
+     * @param supplier the supplier
+     */
     @SuppressWarnings("unused")
     public CachingSupplier(Supplier<T> supplier) {
         this("UNKNOWN", defaultConfig, supplier);
     }
 
+    /**
+     * Instantiates a new Caching supplier.
+     *
+     * @param supplierId the supplier id
+     * @param config     the config
+     * @param supplier   the supplier
+     */
     public CachingSupplier(String supplierId, SupplierConfig config, Supplier<T> supplier) {
         this.supplierId = supplierId;
         this.config = config;
@@ -32,36 +51,43 @@ public class CachingSupplier<T> implements Supplier<T> {
         this.stats = new Stats(supplierId);
     }
 
+    /**
+     * Gets supplier id.
+     *
+     * @return the supplier id
+     */
     @SuppressWarnings("unused")
     public String getSupplierId() {
         return supplierId;
     }
 
+    // get() is NOT synchronized
     @Override
     public T get() {
         T supplierResult;
-        int localSupplierRunCount = supplierRunCount;
+        long localStartTS = System.currentTimeMillis();
 
-        boolean fetchNew = processCurrentState(System.currentTimeMillis());
+        boolean fetchNew = processCurrentState();
 
-        if (fetchNew) {
-            sharedFuture.setStartTS(System.currentTimeMillis());
-            localSupplierRunCount = supplierRunCount;
-            supplierResult = supplier.get();
-            updateState(supplierResult);
-        } else {
-            try {
+        try {
+            if (fetchNew) {
+                supplierResult = supplier.get();
+                updateState(supplierResult);
+            } else {
                 supplierResult = sharedFuture.get();
-            } catch (ExecutionException | NullPointerException | InterruptedException e) {
-                throw new RuntimeException(e);
             }
+        } catch (InterruptedException | ExecutionException e) {
+            String errorMessage = "Error in CachingSupplier get() invocation";
+            logger.log(System.Logger.Level.ERROR, errorMessage, e);
+            throw new RuntimeException(errorMessage, e);
         }
-        stats.updateStats(sharedFuture.supplierFetchTime(), getAgeOfResult(sharedFuture), localSupplierRunCount);
+        stats.updateStats(sharedFuture.supplierFetchTime(), System.currentTimeMillis() - localStartTS,
+                getCurrentSupplierCount() + (fetchNew ? 1 : 0));
 
         return supplierResult;
     }
 
-    private synchronized boolean processCurrentState(long now) {
+    private synchronized boolean processCurrentState() {
         boolean newFuture = false;
 
         switch (state) {
@@ -78,7 +104,7 @@ public class CachingSupplier<T> implements Supplier<T> {
                 break;
 
             case cached:
-                if (isCacheStale(sharedFuture) && notAtMaxSupplierCount() && notInSupplierStaggerDelay()) {
+                if (isCacheStale() && notAtMaxSupplierCount() && notInSupplierStaggerDelay()) {
                     newFuture = true;
                 } else {
                     stats.incrementResultFromCache();
@@ -86,8 +112,12 @@ public class CachingSupplier<T> implements Supplier<T> {
                 break;
         }
         if (newFuture) {
+            supplierRunCount++;
+            state = SupplierState.fetching;
             previousFutureStartTime = (sharedFuture == null) ? 0L : sharedFuture.getStartTS();
-            sharedFuture = getNewCompletableFuture(sharedFuture != null && !sharedFuture.isDone() ? sharedFuture : null);
+            sharedFuture = new CompletableChainableThreadSafeFutureWithTS<>(
+                    sharedFuture != null && !sharedFuture.isDone() ? sharedFuture : null);
+            sharedFuture.setStartTS(System.currentTimeMillis());
             return true;
         }
         return false;
@@ -100,64 +130,149 @@ public class CachingSupplier<T> implements Supplier<T> {
         supplierRunCount--;
     }
 
-    private synchronized CompletableFutureWithTS<T> getNewCompletableFuture(CompletableFutureWithTS<T> chainedFuture) {
-        supplierRunCount++;
-        state = SupplierState.fetching;
-        return new CompletableFutureWithTS<>(chainedFuture);
-    }
-
+    /**
+     * Not at max supplier count boolean.
+     *
+     * @return the boolean
+     */
     public synchronized boolean notAtMaxSupplierCount() {
         return config.getMaxConcurrentRunningSuppliers() < 1 || supplierRunCount < config.getMaxConcurrentRunningSuppliers();
     }
 
+    /**
+     * Not in supplier stagger delay boolean.
+     *
+     * @return the boolean
+     */
     public synchronized boolean notInSupplierStaggerDelay() {
         return (System.currentTimeMillis() - previousFutureStartTime) >= config.getNewSupplierStaggerDelay();
     }
 
-    public synchronized boolean isCacheStale(CompletableFutureWithTS<T> f) {
-        return (!config.isCachingEnabled() || f == null || getAgeOfResult(f) > config.getCachedResultsTTL()) && notAtMaxSupplierCount();
+    /**
+     * Is cache stale boolean.
+     *
+     * @return the boolean
+     */
+    public synchronized boolean isCacheStale() {
+        return (!config.isCachingEnabled() ||
+                sharedFuture == null ||
+                getAgeOfResult() > config.getCachedResultsTTL()) && notAtMaxSupplierCount();
     }
 
-    public synchronized long getAgeOfResult(CompletableFutureWithTS<T> f) {
-        return (config.isCachingEnabled() && state == SupplierState.cached) ? System.currentTimeMillis() - f.getCompleteTS() : 0;
+    /**
+     * Gets age of result.
+     *
+     * @return the age of result
+     */
+    public synchronized long getAgeOfResult() {
+        return (config.isCachingEnabled() && sharedFuture != null &&
+                state == SupplierState.cached) ? System.currentTimeMillis() - sharedFuture.getCompleteTS() : 0;
     }
 
+    /**
+     * Gets json stats.
+     *
+     * @return the json stats
+     */
     public synchronized String getJsonStats() {
         return stats.getJsonStats();
     }
 
+    /**
+     * Clear cache if stale.
+     */
     public synchronized void clearCacheIfStale() {
-        if (sharedFuture != null && isCacheStale(sharedFuture) && supplierRunCount == 0) {
+        if (sharedFuture != null && isCacheStale() && supplierRunCount == 0) {
             state = SupplierState.init;
             sharedFuture = null;
             logger.log(System.Logger.Level.WARNING, "Cleared cache for CachedSupplier with id: " + supplierId);
         }
     }
 
+    /**
+     * Gets current supplier count.
+     *
+     * @return the current supplier count
+     */
     public synchronized int getCurrentSupplierCount() {
         return supplierRunCount;
     }
 
-    public interface SupplierConfig {
-        default long getCachedResultsTTL()  { return 60000; }
-
-        default int getMaxConcurrentRunningSuppliers()  { return 1; }
-
-        default long getNewSupplierStaggerDelay() { return 100; }
-
-        default boolean isCacheCleanupThreadEnabled() { return false; }
-
-        default long pollingPeriodForCleanupThread() { return 5000; }
-
-        default boolean isCachingEnabled() { return getCachedResultsTTL() > 0; }
+    /**
+     * The enum Supplier state.
+     */
+    public enum SupplierState {
+        /**
+         * Init supplier state.
+         */
+        init,
+        /**
+         * Fetching supplier state.
+         */
+        fetching,
+        /**
+         * Cached supplier state.
+         */
+        cached
     }
 
-    public static SupplierConfig defaultConfig = new SupplierConfig() { };
+    /**
+     * The interface Supplier config.
+     */
+    public interface SupplierConfig {
+        /**
+         * Gets cached results ttl.
+         *
+         * @return the cached results ttl
+         */
+        default long getCachedResultsTTL() {
+            return 0;
+        }
 
-    public enum SupplierState {
-        init,
-        fetching,
-        cached
+        /**
+         * Gets max concurrent running suppliers.
+         *
+         * @return the max concurrent running suppliers
+         */
+        default int getMaxConcurrentRunningSuppliers() {
+            return 10;
+        }
+
+        /**
+         * Gets new supplier stagger delay.
+         *
+         * @return the new supplier stagger delay
+         */
+        default long getNewSupplierStaggerDelay() {
+            return 100;
+        }
+
+        /**
+         * Is cache cleanup thread enabled boolean.
+         *
+         * @return the boolean
+         */
+        default boolean isCacheCleanupThreadEnabled() {
+            return false;
+        }
+
+        /**
+         * Polling period for cleanup thread long.
+         *
+         * @return the long
+         */
+        default long pollingPeriodForCleanupThread() {
+            return 5000;
+        }
+
+        /**
+         * Is caching enabled boolean.
+         *
+         * @return the boolean
+         */
+        default boolean isCachingEnabled() {
+            return getCachedResultsTTL() > 0;
+        }
     }
 
     private static class Stats {
@@ -174,25 +289,42 @@ public class CachingSupplier<T> implements Supplier<T> {
         private long totalRunTime = 0;
         private long totalCnt = 0;
 
+        /**
+         * Instantiates a new Stats.
+         *
+         * @param supplierId the supplier id
+         */
         public Stats(String supplierId) {
             this.supplierId = supplierId;
         }
 
+        /**
+         * Increment result from cache.
+         */
         public synchronized void incrementResultFromCache() {
             handleRollover();
             resultFromCache++;
         }
 
+        /**
+         * Increment result from caching supplier.
+         */
         public synchronized void incrementResultFromCachingSupplier() {
             handleRollover();
             resultFromCachingSupplier++;
         }
 
+        /**
+         * Increment result from supplier.
+         */
         public synchronized void incrementResultFromSupplier() {
             handleRollover();
             resultFromSupplier++;
         }
 
+        /**
+         * Handle rollover.
+         */
         public synchronized void handleRollover() {
             if (
                     resultFromCache > LIMIT ||
@@ -214,6 +346,11 @@ public class CachingSupplier<T> implements Supplier<T> {
             }
         }
 
+        /**
+         * Gets json stats.
+         *
+         * @return the json stats
+         */
         public synchronized String getJsonStats() {
             return "{\"supplierId\":\"" + supplierId + "\",\"count\":" + totalCnt + ",\"servedByCache\":" + resultFromCache +
                     ",\"servedByCachingSupplier\":" + resultFromCachingSupplier + ",\"servedBySupplier\":" + resultFromSupplier +

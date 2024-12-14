@@ -1,10 +1,8 @@
 package com.marvinware;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Random;
-import java.util.function.Supplier;
 
 public class CachingSupplierTest {
 
@@ -24,7 +22,7 @@ public class CachingSupplierTest {
             }
         };
 
-        CachingSupplier<Long> cachedSuplier = new CachingSupplier<>("id1",
+        CachingSupplier<Long> cachedSupplier = new CachingSupplier<>("id1",
                 config,
                 () -> {
                     Random r = new Random();
@@ -37,7 +35,7 @@ public class CachingSupplierTest {
                     return System.currentTimeMillis();
                 });
 
-        Long ret = cachedSuplier.get();
+        Long ret = cachedSupplier.get();
 
 
     }

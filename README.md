@@ -52,7 +52,7 @@ deemed "stale".
   Cached result objects can be "stale".  They can be from upstream queries that do not encompass changes recently made to the upstream system.
   This package has configuration settings to control the caching staleness time window, but it will often be a tradeoff between performance
   and staleness.  Even if the caching TTL configuration is set to the minimal value (0 = turns off caching), there are scenarios
-  where upstream data changes are not captured until another request is made.  A later section of this document will highlight the issue and a few scnearios. 
+  where upstream data changes are not captured until another request is made.  A later section of this document will highlight the issue and a few scenarios. 
 
 * **This package (CachingSupplier) is a Tactical Solution, not a Strategic one.**
 

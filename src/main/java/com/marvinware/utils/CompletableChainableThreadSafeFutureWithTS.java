@@ -3,39 +3,77 @@ package com.marvinware.utils;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-public class CompletableFutureWithTS<T> extends CompletableFuture<T> {
+/**
+ * The type Completable future with ts.
+ *
+ * @param <T> the type parameter
+ */
+public class CompletableChainableThreadSafeFutureWithTS<T> extends CompletableFuture<T> {
     private volatile long startTS = 0L;
     private volatile long completeTS = 0L;
-    CompletableFutureWithTS<T> chainedFuture;
+    private CompletableFuture<T> chainedFuture;
 
-    public CompletableFutureWithTS(CompletableFutureWithTS<T> chainedFuture) {
+    /**
+     * Instantiates a new Completable future with ts.
+     *
+     * @param chainedFuture the chained future
+     */
+    @SuppressWarnings("CopyConstructorMissesField")
+    public CompletableChainableThreadSafeFutureWithTS(CompletableChainableThreadSafeFutureWithTS<T> chainedFuture) {
         this.chainedFuture = chainedFuture;
     }
 
+    /**
+     * Sets start ts.
+     *
+     * @param ts the ts
+     */
     public synchronized void setStartTS(long ts) {
         this.startTS = ts;
     }
 
+    /**
+     * Sets complete ts.
+     *
+     * @param ts the ts
+     */
     public synchronized void setCompleteTS(long ts) {
         this.completeTS = ts;
     }
 
+    /**
+     * Gets complete ts.
+     *
+     * @return the complete ts
+     */
     public synchronized long getCompleteTS() {
         return completeTS;
     }
 
+    /**
+     * Gets start ts.
+     *
+     * @return the start ts
+     */
     public synchronized long getStartTS() {
         return startTS;
     }
 
-    public synchronized long getChainedFutureStartTS() {
-        return (chainedFuture != null) ? chainedFuture.getStartTS() : 0;
-    }
-
+    /**
+     * Is not started boolean.
+     *
+     * @return the boolean
+     */
+    @SuppressWarnings("unused")
     public synchronized boolean isNotStarted() {
         return completeTS == 0L && startTS == 0L;
     }
 
+    /**
+     * Supplier fetch time long.
+     *
+     * @return the long
+     */
     public synchronized long supplierFetchTime() {
         return completeTS <= 0 ? -1 : completeTS - startTS;
     }
@@ -51,32 +89,32 @@ public class CompletableFutureWithTS<T> extends CompletableFuture<T> {
     }
 
     @Override
-    public boolean complete(T value) {
+    public synchronized boolean complete(T value) {
         boolean ret = super.complete(value);
-        if (chainedFuture != null) {
-            chainedFuture.complete(value);
-        }
-
         if (getCompleteTS() <= 0) {
             setCompleteTS(System.currentTimeMillis());
+        }
+        if (chainedFuture != null) {
+            chainedFuture.complete(value);
+            chainedFuture = null;
         }
 
         return ret;
     }
 
     @Override
-    public boolean cancel(boolean mayInterruptIfRunning) {
+    public synchronized boolean cancel(boolean mayInterruptIfRunning) {
         boolean ret = super.cancel(mayInterruptIfRunning);
-
         if (chainedFuture != null) {
             chainedFuture.cancel(mayInterruptIfRunning);
+            chainedFuture = null;
         }
-
         if (getCompleteTS() <= 0) {
             setCompleteTS(System.currentTimeMillis());
         }
-
         return ret;
     }
+
+
 
 }

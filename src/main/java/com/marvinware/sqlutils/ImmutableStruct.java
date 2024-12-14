@@ -2,9 +2,17 @@ package com.marvinware.sqlutils;
 
 import java.sql.Struct;
 
+/**
+ * The type Immutable struct.
+ */
 public class ImmutableStruct implements Struct {
     private final Struct struct;
 
+    /**
+     * Instantiates a new Immutable struct.
+     *
+     * @param struct the struct
+     */
     public ImmutableStruct(Struct struct) {
         this.struct = struct;
     }

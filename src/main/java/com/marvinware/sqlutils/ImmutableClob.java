@@ -8,9 +8,17 @@ import java.sql.Clob;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 
+/**
+ * The type Immutable clob.
+ */
 public class ImmutableClob implements Clob {
     private final Clob clob;
 
+    /**
+     * Instantiates a new Immutable clob.
+     *
+     * @param clob the clob
+     */
     public ImmutableClob(Clob clob) {
         this.clob = clob;
     }

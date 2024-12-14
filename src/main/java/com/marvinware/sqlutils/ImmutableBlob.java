@@ -6,9 +6,17 @@ import java.sql.Blob;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 
+/**
+ * The type Immutable blob.
+ */
 public class ImmutableBlob implements Blob {
     private final Blob blob;
 
+    /**
+     * Instantiates a new Immutable blob.
+     *
+     * @param blob the blob
+     */
     public ImmutableBlob(Blob blob) {
         this.blob = blob;
     }

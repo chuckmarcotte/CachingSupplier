@@ -2,12 +2,25 @@ package com.marvinware.sqlutils;
 
 import java.io.Serializable;
 
+/**
+ * The type Immutable date.
+ */
 public class ImmutableDate extends java.sql.Date implements Serializable {
 
+    /**
+     * Instantiates a new Immutable date.
+     *
+     * @param date the date
+     */
     public ImmutableDate(long date) {
         super(date);
     }
 
+    /**
+     * Instantiates a new Immutable date.
+     *
+     * @param date the date
+     */
     public ImmutableDate(java.sql.Date date) {
         super(date.getTime());
     }

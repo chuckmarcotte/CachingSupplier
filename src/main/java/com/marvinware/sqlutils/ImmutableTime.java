@@ -2,11 +2,24 @@ package com.marvinware.sqlutils;
 
 import java.io.Serializable;
 
+/**
+ * The type Immutable time.
+ */
 public class ImmutableTime extends java.sql.Time implements Serializable {
+    /**
+     * Instantiates a new Immutable time.
+     *
+     * @param time the time
+     */
     public ImmutableTime(long time) {
         super(time);
     }
 
+    /**
+     * Instantiates a new Immutable time.
+     *
+     * @param time the time
+     */
     public ImmutableTime(java.sql.Time time) {
         super(time.getTime());
     }

@@ -10,6 +10,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * The type Immutable table.
+ */
 public class ImmutableTable {
     private final Object[][] table;
     private final int[] columnTypes;
@@ -17,6 +20,12 @@ public class ImmutableTable {
     private final Map<Integer, String> colIndexToName = new HashMap<>();
     private final Map<String, Integer> colNameToIndex = new HashMap<>();
 
+    /**
+     * Instantiates a new Immutable table.
+     *
+     * @param rset the rset
+     * @throws SQLException the sql exception
+     */
     public ImmutableTable(ResultSet rset) throws SQLException {
         ResultSetMetaData resultSetMetaData = rset.getMetaData();
         int colCnt = resultSetMetaData.getColumnCount();
@@ -57,10 +66,20 @@ public class ImmutableTable {
         }
     }
 
+    /**
+     * Gets column count.
+     *
+     * @return the column count
+     */
     public int getColumnCount() {
         return table == null ? 0 : table.length;
     }
 
+    /**
+     * Gets row count.
+     *
+     * @return the row count
+     */
     public int getRowCount() {
         return table == null || table[0] == null ? 0 : table[0].length;
     }
@@ -74,12 +93,27 @@ public class ImmutableTable {
         }
     }
 
-    public String getString(int columnIndex, int rowIndex) throws SQLException {
+    /**
+     * Gets string.
+     *
+     * @param columnIndex the column index
+     * @param rowIndex    the row index
+     * @return the string
+     */
+    public String getString(int columnIndex, int rowIndex) {
         checkIndexes(columnIndex, rowIndex);
         Object value = table[columnIndex-1][rowIndex-1];
         return value == null ? null : value.toString();
     }
 
+    /**
+     * Gets boolean.
+     *
+     * @param columnIndex the column index
+     * @param rowIndex    the row index
+     * @return the boolean
+     * @throws SQLException the sql exception
+     */
     public boolean getBoolean(int columnIndex, int rowIndex) throws SQLException {
         checkIndexes(columnIndex, rowIndex);
         Object value = table[columnIndex-1][rowIndex-1];
@@ -96,6 +130,14 @@ public class ImmutableTable {
         }
     }
 
+    /**
+     * Gets byte.
+     *
+     * @param columnIndex the column index
+     * @param rowIndex    the row index
+     * @return the byte
+     * @throws SQLException the sql exception
+     */
     public byte getByte(int columnIndex, int rowIndex) throws SQLException {
         checkIndexes(columnIndex, rowIndex);
         Object value = table[columnIndex-1][rowIndex-1];
@@ -112,6 +154,14 @@ public class ImmutableTable {
         }
     }
 
+    /**
+     * Gets short.
+     *
+     * @param columnIndex the column index
+     * @param rowIndex    the row index
+     * @return the short
+     * @throws SQLException the sql exception
+     */
     public short getShort(int columnIndex, int rowIndex) throws SQLException {
         checkIndexes(columnIndex, rowIndex);
         Object value = table[columnIndex-1][rowIndex-1];
@@ -129,6 +179,14 @@ public class ImmutableTable {
     }
 
 
+    /**
+     * Gets int.
+     *
+     * @param columnIndex the column index
+     * @param rowIndex    the row index
+     * @return the int
+     * @throws SQLException the sql exception
+     */
     public int getInt(int columnIndex, int rowIndex) throws SQLException {
         checkIndexes(columnIndex, rowIndex);
         Object value = table[columnIndex-1][rowIndex-1];
@@ -146,6 +204,14 @@ public class ImmutableTable {
     }
 
 
+    /**
+     * Gets long.
+     *
+     * @param columnIndex the column index
+     * @param rowIndex    the row index
+     * @return the long
+     * @throws SQLException the sql exception
+     */
     public long getLong(int columnIndex, int rowIndex) throws SQLException {
         checkIndexes(columnIndex, rowIndex);
         Object value = table[columnIndex-1][rowIndex-1];
@@ -163,6 +229,14 @@ public class ImmutableTable {
     }
 
 
+    /**
+     * Gets float.
+     *
+     * @param columnIndex the column index
+     * @param rowIndex    the row index
+     * @return the float
+     * @throws SQLException the sql exception
+     */
     public float getFloat(int columnIndex, int rowIndex) throws SQLException {
         checkIndexes(columnIndex, rowIndex);
         Object value = table[columnIndex-1][rowIndex-1];
@@ -179,6 +253,14 @@ public class ImmutableTable {
         }
     }
 
+    /**
+     * Gets double.
+     *
+     * @param columnIndex the column index
+     * @param rowIndex    the row index
+     * @return the double
+     * @throws SQLException the sql exception
+     */
     public double getDouble(int columnIndex, int rowIndex) throws SQLException {
         checkIndexes(columnIndex, rowIndex);
         Object value = table[columnIndex-1][rowIndex-1];
@@ -195,6 +277,15 @@ public class ImmutableTable {
         }
     }
 
+    /**
+     * Gets big decimal.
+     *
+     * @param columnIndex the column index
+     * @param rowIndex    the row index
+     * @param scale       the scale
+     * @return the big decimal
+     * @throws SQLException the sql exception
+     */
     public BigDecimal getBigDecimal(int columnIndex, int rowIndex, int scale) throws SQLException {
         checkIndexes(columnIndex, rowIndex);
         Object value = table[columnIndex-1][rowIndex-1];
@@ -223,6 +314,14 @@ public class ImmutableTable {
         };
     }
 
+    /**
+     * Get bytes byte [ ].
+     *
+     * @param columnIndex the column index
+     * @param rowIndex    the row index
+     * @return the byte [ ]
+     * @throws SQLException the sql exception
+     */
     public byte[] getBytes(int columnIndex, int rowIndex) throws SQLException {
         checkIndexes(columnIndex, rowIndex);
 
@@ -233,6 +332,14 @@ public class ImmutableTable {
         return (byte[])(table[columnIndex-1][rowIndex-1]);
     }
 
+    /**
+     * Gets date.
+     *
+     * @param columnIndex the column index
+     * @param rowIndex    the row index
+     * @return the date
+     * @throws SQLException the sql exception
+     */
     public Date getDate(int columnIndex, int rowIndex) throws SQLException {
         checkIndexes(columnIndex, rowIndex);
         Object value = table[columnIndex-1][rowIndex-1];
@@ -264,6 +371,14 @@ public class ImmutableTable {
         }
     }
 
+    /**
+     * Gets time.
+     *
+     * @param columnIndex the column index
+     * @param rowIndex    the row index
+     * @return the time
+     * @throws SQLException the sql exception
+     */
     public Time getTime(int columnIndex, int rowIndex) throws SQLException {
         checkIndexes(columnIndex, rowIndex);
         Object value = table[columnIndex-1][rowIndex-1];
@@ -294,6 +409,14 @@ public class ImmutableTable {
         }
     }
 
+    /**
+     * Gets timestamp.
+     *
+     * @param columnIndex the column index
+     * @param rowIndex    the row index
+     * @return the timestamp
+     * @throws SQLException the sql exception
+     */
     public Timestamp getTimestamp(int columnIndex, int rowIndex) throws SQLException {
         checkIndexes(columnIndex, rowIndex);
         Object value = table[columnIndex-1][rowIndex-1];
@@ -329,86 +452,219 @@ public class ImmutableTable {
         }
     }
 
+    /**
+     * Gets string.
+     *
+     * @param columnLabel the column label
+     * @param rowIndex    the row index
+     * @return the string
+     * @throws SQLException the sql exception
+     */
     public String getString(String columnLabel, int rowIndex) throws SQLException {
         return getString(colNameToIndex.get(columnLabel), rowIndex);
     }
 
 
+    /**
+     * Gets boolean.
+     *
+     * @param columnLabel the column label
+     * @param rowIndex    the row index
+     * @return the boolean
+     * @throws SQLException the sql exception
+     */
     public boolean getBoolean(String columnLabel, int rowIndex) throws SQLException {
         return getBoolean(colNameToIndex.get(columnLabel), rowIndex);
     }
 
 
+    /**
+     * Gets byte.
+     *
+     * @param columnLabel the column label
+     * @param rowIndex    the row index
+     * @return the byte
+     * @throws SQLException the sql exception
+     */
     public byte getByte(String columnLabel, int rowIndex) throws SQLException {
         return getByte(colNameToIndex.get(columnLabel), rowIndex);
     }
 
 
+    /**
+     * Gets short.
+     *
+     * @param columnLabel the column label
+     * @param rowIndex    the row index
+     * @return the short
+     * @throws SQLException the sql exception
+     */
     public short getShort(String columnLabel, int rowIndex) throws SQLException {
         return getShort(colNameToIndex.get(columnLabel), rowIndex);
     }
 
 
+    /**
+     * Gets int.
+     *
+     * @param columnLabel the column label
+     * @param rowIndex    the row index
+     * @return the int
+     * @throws SQLException the sql exception
+     */
     public int getInt(String columnLabel, int rowIndex) throws SQLException {
         return getInt(colNameToIndex.get(columnLabel), rowIndex);
     }
 
 
+    /**
+     * Gets long.
+     *
+     * @param columnLabel the column label
+     * @param rowIndex    the row index
+     * @return the long
+     * @throws SQLException the sql exception
+     */
     public long getLong(String columnLabel, int rowIndex) throws SQLException {
         return getLong(colNameToIndex.get(columnLabel), rowIndex);
     }
 
 
+    /**
+     * Gets float.
+     *
+     * @param columnLabel the column label
+     * @param rowIndex    the row index
+     * @return the float
+     * @throws SQLException the sql exception
+     */
     public float getFloat(String columnLabel, int rowIndex) throws SQLException {
         return getFloat(colNameToIndex.get(columnLabel), rowIndex);
     }
 
 
+    /**
+     * Gets double.
+     *
+     * @param columnLabel the column label
+     * @param rowIndex    the row index
+     * @return the double
+     * @throws SQLException the sql exception
+     */
     public double getDouble(String columnLabel, int rowIndex) throws SQLException {
         return getDouble(colNameToIndex.get(columnLabel), rowIndex);
     }
 
 
+    /**
+     * Gets big decimal.
+     *
+     * @param columnLabel the column label
+     * @param rowIndex    the row index
+     * @param scale       the scale
+     * @return the big decimal
+     * @throws SQLException the sql exception
+     */
     public BigDecimal getBigDecimal(String columnLabel, int rowIndex, int scale) throws SQLException {
         return getBigDecimal(colNameToIndex.get(columnLabel), rowIndex, scale);
     }
 
 
+    /**
+     * Get bytes byte [ ].
+     *
+     * @param columnLabel the column label
+     * @param rowIndex    the row index
+     * @return the byte [ ]
+     * @throws SQLException the sql exception
+     */
     public byte[] getBytes(String columnLabel, int rowIndex) throws SQLException {
         return getBytes(colNameToIndex.get(columnLabel), rowIndex);
     }
 
 
+    /**
+     * Gets date.
+     *
+     * @param columnLabel the column label
+     * @param rowIndex    the row index
+     * @return the date
+     * @throws SQLException the sql exception
+     */
     public Date getDate(String columnLabel, int rowIndex) throws SQLException {
         return getDate(colNameToIndex.get(columnLabel), rowIndex);
     }
 
 
+    /**
+     * Gets time.
+     *
+     * @param columnLabel the column label
+     * @param rowIndex    the row index
+     * @return the time
+     * @throws SQLException the sql exception
+     */
     public Time getTime(String columnLabel, int rowIndex) throws SQLException {
         return getTime(colNameToIndex.get(columnLabel), rowIndex);
     }
 
 
+    /**
+     * Gets timestamp.
+     *
+     * @param columnLabel the column label
+     * @param rowIndex    the row index
+     * @return the timestamp
+     * @throws SQLException the sql exception
+     */
     public Timestamp getTimestamp(String columnLabel, int rowIndex) throws SQLException {
         return getTimestamp(colNameToIndex.get(columnLabel), rowIndex);
     }
 
 
-    public Object getObject(int columnIndex, int rowIndex) throws SQLException {
+    /**
+     * Gets object.
+     *
+     * @param columnIndex the column index
+     * @param rowIndex    the row index
+     * @return the object
+     */
+    public Object getObject(int columnIndex, int rowIndex) {
         checkIndexes(columnIndex, rowIndex);
         return table[columnIndex-1][rowIndex-1];
     }
 
-    public Object getObject(String columnLabel, int rowIndex) throws SQLException {
+    /**
+     * Gets object.
+     *
+     * @param columnLabel the column label
+     * @param rowIndex    the row index
+     * @return the object
+     */
+    public Object getObject(String columnLabel, int rowIndex) {
         int ci = colNameToIndex.get(columnLabel);
         checkIndexes(ci, rowIndex);
         return table[ci][rowIndex-1];
     }
 
-    public int findColumn(String columnLabel) throws SQLException {
+    /**
+     * Find column int.
+     *
+     * @param columnLabel the column label
+     * @return the int
+     */
+    public int findColumn(String columnLabel) {
         return colNameToIndex.get(columnLabel);
     }
 
+    /**
+     * Gets big decimal.
+     *
+     * @param columnIndex the column index
+     * @param rowIndex    the row index
+     * @return the big decimal
+     * @throws SQLException the sql exception
+     */
     public BigDecimal getBigDecimal(int columnIndex, int rowIndex) throws SQLException {
         checkIndexes(columnIndex, rowIndex);
         Object value = table[columnIndex-1][rowIndex-1];
@@ -428,6 +684,14 @@ public class ImmutableTable {
     }
 
 
+    /**
+     * Gets big decimal.
+     *
+     * @param columnLabel the column label
+     * @param rowIndex    the row index
+     * @return the big decimal
+     * @throws SQLException the sql exception
+     */
     public BigDecimal getBigDecimal(String columnLabel, int rowIndex) throws SQLException {
         return getBigDecimal(colNameToIndex.get(columnLabel), rowIndex);
     }

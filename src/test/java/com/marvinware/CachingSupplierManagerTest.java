@@ -16,18 +16,6 @@ public class CachingSupplierManagerTest {
 
         CachingSupplierManager<Long> manager = new CachingSupplierManager<>();
 
-//        CachingSupplierManager<Long> manager = new CachingSupplierManager<>(new CachingSupplier.SupplierConfig() {
-//            @Override
-//            public long getCachedResultsTTL() {
-//                return cacheTTL;
-//            }
-//
-//            @Override
-//            public int getMaxRunningSuppliers() {
-//                return 20;
-//            }
-//        });
-
         manager.registerSupplier("supplier1", () -> {
             // Simple Supplier that sleeps and returns a Long
             Random r = new Random();
@@ -44,8 +32,8 @@ public class CachingSupplierManagerTest {
         Thread[] threads = new Thread[threadCount];
         Long[] results = new Long[threadCount];
         for (int t = 0; t < threads.length; t++) {
-            final int tIndx = t;
-            threads[tIndx] = new Thread(() -> {
+            final int tIndex = t;
+            threads[tIndex] = new Thread(() -> {
                 Random r = new Random();
                 for (int i = 0; i < 3; i++) {
                     int num = r.nextInt(100);
@@ -56,7 +44,7 @@ public class CachingSupplierManagerTest {
                     }
                     Long res = manager.get("supplier1");
                     synchronized(results) {
-                        results[tIndx] = res;
+                        results[tIndex] = res;
                     }
                 }
             });
@@ -101,8 +89,8 @@ public class CachingSupplierManagerTest {
         }
 
         for (int t = 0; t < threads.length; t++) {
-            final int tIndx = t;
-            threads[tIndx] = new Thread(() -> {
+            final int tIndex = t;
+            threads[tIndex] = new Thread(() -> {
                 Random r = new Random();
                 for (int i = 0; i < 3; i++) {
                     int num = r.nextInt(100);
@@ -113,7 +101,7 @@ public class CachingSupplierManagerTest {
                     }
                     Long res = manager.get("supplier1");
                     synchronized(results) {
-                        results[tIndx] = res;
+                        results[tIndex] = res;
                     }
                 }
             });

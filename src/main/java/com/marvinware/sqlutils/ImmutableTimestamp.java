@@ -2,11 +2,24 @@ package com.marvinware.sqlutils;
 
 import java.io.Serializable;
 
+/**
+ * The type Immutable timestamp.
+ */
 public class ImmutableTimestamp extends java.sql.Timestamp implements Serializable {
+    /**
+     * Instantiates a new Immutable timestamp.
+     *
+     * @param time the time
+     */
     public ImmutableTimestamp(long time) {
         super(time);
     }
 
+    /**
+     * Instantiates a new Immutable timestamp.
+     *
+     * @param timestamp the timestamp
+     */
     public ImmutableTimestamp(java.sql.Timestamp timestamp) {
         super(timestamp.getTime());
     }

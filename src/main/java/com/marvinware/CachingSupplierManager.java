@@ -6,6 +6,11 @@ import java.util.function.Supplier;
 
 import static java.lang.Thread.sleep;
 
+/**
+ * The type Caching supplier manager.
+ *
+ * @param <T> the type parameter
+ */
 public class CachingSupplierManager<T> {
 
     private final CachingSupplier.SupplierConfig currentConfig;
@@ -13,16 +18,27 @@ public class CachingSupplierManager<T> {
     private final System.Logger logger = System.getLogger(CachingSupplierManager.class.getName());
 
 
-    public static CachingSupplier.SupplierConfig defaultConfig = new CachingSupplier.SupplierConfig() {
+    /**
+     * The constant defaultConfig.
+     */
+    public static final CachingSupplier.SupplierConfig defaultConfig = new CachingSupplier.SupplierConfig() {
         @Override
         public boolean isCacheCleanupThreadEnabled() { return true; }
     };
 
 
+    /**
+     * Instantiates a new Caching supplier manager.
+     */
     public CachingSupplierManager() {
         this(defaultConfig);
     }
 
+    /**
+     * Instantiates a new Caching supplier manager.
+     *
+     * @param config the config
+     */
     public CachingSupplierManager(CachingSupplier.SupplierConfig config)
     {
         this.currentConfig = config;
@@ -60,10 +76,23 @@ public class CachingSupplierManager<T> {
         return t;
     }
 
+    /**
+     * Register supplier.
+     *
+     * @param resourceId the resource id
+     * @param supplier   the supplier
+     */
     public void registerSupplier(String resourceId, Supplier<T> supplier) {
         registerSupplier(resourceId, defaultConfig, supplier);
     }
 
+    /**
+     * Register supplier.
+     *
+     * @param supplierId     the supplier id
+     * @param supplierConfig the supplier config
+     * @param supplier       the supplier
+     */
     public void registerSupplier(String supplierId, CachingSupplier.SupplierConfig supplierConfig, Supplier<T> supplier) {
         CachingSupplier<T> newSS = new CachingSupplier<>(supplierId, supplierConfig, supplier);
         CachingSupplier<T> oldSS = cachingSuppliersByResourceId.putIfAbsent(supplierId, newSS);
@@ -74,16 +103,34 @@ public class CachingSupplierManager<T> {
         }
     }
 
+    /**
+     * Gets stats json.
+     *
+     * @param resourceId the resource id
+     * @return the stats json
+     */
     public String getStatsJson(String resourceId) {
         CachingSupplier<T> supplier = cachingSuppliersByResourceId.get(resourceId);
         return supplier.getJsonStats();
     }
 
+    /**
+     * Gets current supplier count.
+     *
+     * @param resourceId the resource id
+     * @return the current supplier count
+     */
     public int getCurrentSupplierCount(String resourceId) {
         CachingSupplier<T> supplier = cachingSuppliersByResourceId.get(resourceId);
         return supplier.getCurrentSupplierCount();
     }
 
+    /**
+     * Get t.
+     *
+     * @param resourceId the resource id
+     * @return the t
+     */
     public T get(String resourceId) {
         CachingSupplier<T> cachingSupplier = cachingSuppliersByResourceId.get(resourceId);
         if (cachingSupplier == null) {
@@ -95,6 +142,9 @@ public class CachingSupplierManager<T> {
 
     }
 
+    /**
+     * Clear.
+     */
     @SuppressWarnings("unused")
     protected void clear() {    // used by unit tests
         cachingSuppliersByResourceId.clear();
