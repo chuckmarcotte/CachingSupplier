@@ -2,8 +2,10 @@ package com.marvinware;
 
 import org.junit.jupiter.api.*;
 
+import java.util.Map;
 import java.util.Random;
 
+import static java.util.Map.entry;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class CachingSupplierManagerTest {
@@ -14,7 +16,15 @@ public class CachingSupplierManagerTest {
     @Test
     public void loadTest() {
 
-        CachingSupplierManager<Long> manager = new CachingSupplierManager<>();
+        CachingSupplierConfig config = new CachingSupplierConfig.ConfigProperties("test", Map.ofEntries(
+                entry("test.CachingSupplierConfig.CachedResultsTTL", "500"),
+                entry("test.CachingSupplierConfig.MaxConcurrentRunningSuppliers", "10"),
+                entry("test.CachingSupplierConfig.NewSupplierStaggerDelay", "200"),
+                entry("test.CachingSupplierConfig.CacheCleanupThreadEnabled", "true"),
+                entry("test.CachingSupplierConfig.PollingPeriodForCleanupThread", "10000")
+        ));
+
+        CachingSupplierManager<Long> manager = new CachingSupplierManager<>(config);
 
         manager.registerSupplier("supplier1", () -> {
             // Simple Supplier that sleeps and returns a Long

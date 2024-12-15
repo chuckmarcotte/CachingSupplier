@@ -13,7 +13,7 @@ import static java.lang.Thread.sleep;
  */
 public class CachingSupplierManager<T> {
 
-    private final CachingSupplier.SupplierConfig currentConfig;
+    private final CachingSupplierConfig currentConfig;
     private final ConcurrentMap<String, CachingSupplier<T>> cachingSuppliersByResourceId = new ConcurrentHashMap<>();
     private final System.Logger logger = System.getLogger(CachingSupplierManager.class.getName());
 
@@ -21,7 +21,7 @@ public class CachingSupplierManager<T> {
     /**
      * The constant defaultConfig.
      */
-    public static final CachingSupplier.SupplierConfig defaultConfig = new CachingSupplier.SupplierConfig() {
+    public static final CachingSupplierConfig defaultConfig = new CachingSupplierConfig() {
         @Override
         public boolean isCacheCleanupThreadEnabled() { return true; }
     };
@@ -39,7 +39,7 @@ public class CachingSupplierManager<T> {
      *
      * @param config the config
      */
-    public CachingSupplierManager(CachingSupplier.SupplierConfig config)
+    public CachingSupplierManager(CachingSupplierConfig config)
     {
         this.currentConfig = config;
 
@@ -83,18 +83,18 @@ public class CachingSupplierManager<T> {
      * @param supplier   the supplier
      */
     public void registerSupplier(String resourceId, Supplier<T> supplier) {
-        registerSupplier(resourceId, defaultConfig, supplier);
+        registerSupplier(resourceId, currentConfig, supplier);
     }
 
     /**
      * Register supplier.
      *
      * @param supplierId     the supplier id
-     * @param supplierConfig the supplier config
+     * @param cachingSupplierConfig the supplier config
      * @param supplier       the supplier
      */
-    public void registerSupplier(String supplierId, CachingSupplier.SupplierConfig supplierConfig, Supplier<T> supplier) {
-        CachingSupplier<T> newSS = new CachingSupplier<>(supplierId, supplierConfig, supplier);
+    public void registerSupplier(String supplierId, CachingSupplierConfig cachingSupplierConfig, Supplier<T> supplier) {
+        CachingSupplier<T> newSS = new CachingSupplier<>(supplierId, cachingSupplierConfig, supplier);
         CachingSupplier<T> oldSS = cachingSuppliersByResourceId.putIfAbsent(supplierId, newSS);
         if (oldSS != null) {
             String errorMsg = "A registered CachingSupplier already exists for id: " + supplierId;

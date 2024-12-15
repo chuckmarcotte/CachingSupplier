@@ -10,7 +10,7 @@ public class CachingSupplierTest {
     @Test
     public void simpleTest() {
 
-        CachingSupplier.SupplierConfig config = new CachingSupplier.SupplierConfig() {
+        CachingSupplierConfig config = new CachingSupplierConfig() {
             @Override
             public long getCachedResultsTTL() {
                 return 1000;

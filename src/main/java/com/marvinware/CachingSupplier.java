@@ -16,10 +16,10 @@ public class CachingSupplier<T> implements Supplier<T> {
     /**
      * The constant defaultConfig.
      */
-    public static final SupplierConfig defaultConfig = new SupplierConfig() { };
+    public static final CachingSupplierConfig defaultConfig = new CachingSupplierConfig() { };
     private static final System.Logger logger = System.getLogger(CachingSupplier.class.getName());
     private final String supplierId;
-    private final SupplierConfig config;
+    private final CachingSupplierConfig config;
     private final Supplier<T> supplier;
     private final Stats stats;
     private volatile int supplierRunCount = 0;
@@ -44,7 +44,7 @@ public class CachingSupplier<T> implements Supplier<T> {
      * @param config     the config
      * @param supplier   the supplier
      */
-    public CachingSupplier(String supplierId, SupplierConfig config, Supplier<T> supplier) {
+    public CachingSupplier(String supplierId, CachingSupplierConfig config, Supplier<T> supplier) {
         this.supplierId = supplierId;
         this.config = config;
         this.supplier = supplier;
@@ -66,14 +66,17 @@ public class CachingSupplier<T> implements Supplier<T> {
     public T get() {
         T supplierResult;
         long localStartTS = System.currentTimeMillis();
+        int localSupplierCount = 0;
 
         boolean fetchNew = processCurrentState();
 
         try {
             if (fetchNew) {
+                localSupplierCount = getCurrentSupplierCount();
                 supplierResult = supplier.get();
                 updateState(supplierResult);
             } else {
+                localSupplierCount = getCurrentSupplierCount();
                 supplierResult = sharedFuture.get();
             }
         } catch (InterruptedException | ExecutionException e) {
@@ -81,8 +84,7 @@ public class CachingSupplier<T> implements Supplier<T> {
             logger.log(System.Logger.Level.ERROR, errorMessage, e);
             throw new RuntimeException(errorMessage, e);
         }
-        stats.updateStats(sharedFuture.supplierFetchTime(), System.currentTimeMillis() - localStartTS,
-                getCurrentSupplierCount() + (fetchNew ? 1 : 0));
+        stats.updateStats(sharedFuture.supplierFetchTime(), System.currentTimeMillis() - localStartTS, localSupplierCount);
 
         return supplierResult;
     }
@@ -214,65 +216,6 @@ public class CachingSupplier<T> implements Supplier<T> {
          * Cached supplier state.
          */
         cached
-    }
-
-    /**
-     * The interface Supplier config.
-     */
-    public interface SupplierConfig {
-        /**
-         * Gets cached results ttl.
-         *
-         * @return the cached results ttl
-         */
-        default long getCachedResultsTTL() {
-            return 0;
-        }
-
-        /**
-         * Gets max concurrent running suppliers.
-         *
-         * @return the max concurrent running suppliers
-         */
-        default int getMaxConcurrentRunningSuppliers() {
-            return 10;
-        }
-
-        /**
-         * Gets new supplier stagger delay.
-         *
-         * @return the new supplier stagger delay
-         */
-        default long getNewSupplierStaggerDelay() {
-            return 100;
-        }
-
-        /**
-         * Is cache cleanup thread enabled boolean.
-         *
-         * @return the boolean
-         */
-        default boolean isCacheCleanupThreadEnabled() {
-            return false;
-        }
-
-        /**
-         * Polling period for cleanup thread long.
-         *
-         * @return the long
-         */
-        default long pollingPeriodForCleanupThread() {
-            return 5000;
-        }
-
-        /**
-         * Is caching enabled boolean.
-         *
-         * @return the boolean
-         */
-        default boolean isCachingEnabled() {
-            return getCachedResultsTTL() > 0;
-        }
     }
 
     private static class Stats {
