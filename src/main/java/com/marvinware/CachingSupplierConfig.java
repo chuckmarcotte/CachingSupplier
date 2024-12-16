@@ -2,19 +2,20 @@ package com.marvinware;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 /**
  * The interface Supplier config.
  */
 public interface CachingSupplierConfig {
+    String KEYS_PREFIX = "CachingSupplierConfig.";
+
     /**
      * Gets cached results ttl.
      *
      * @return the cached results ttl
      */
     default long getCachedResultsTTL() {
-        return 0;
+        return 100;
     }
 
     /**
@@ -41,7 +42,7 @@ public interface CachingSupplierConfig {
      * @return the boolean
      */
     default boolean isCacheCleanupThreadEnabled() {
-        return false;
+        return true;
     }
 
     /**
@@ -62,50 +63,53 @@ public interface CachingSupplierConfig {
         return getCachedResultsTTL() > 0;
     }
 
-    public class ConfigProperties implements CachingSupplierConfig {
+
+    class ConfigProperties implements CachingSupplierConfig {
         private final Map<Object, Object> properties;
         private final String prefix;
 
-        public static final String CachedResultsTTL = "CachedResultsTTL";
-        public static final String MaxConcurrentRunningSuppliers = "MaxConcurrentRunningSuppliers";
-        public static final String NewSupplierStaggerDelay = "NewSupplierStaggerDelay";
-        public static final String CacheCleanupThreadEnabled = "CacheCleanupThreadEnabled";
-        public static final String PollingPeriodForCleanupThread = "PollingPeriodForCleanupThread";
+        public static final String CachedResultsTTL = KEYS_PREFIX + "CachedResultsTTL";
+        public static final String MaxConcurrentRunningSuppliers = KEYS_PREFIX + "MaxConcurrentRunningSuppliers";
+        public static final String NewSupplierStaggerDelay = KEYS_PREFIX + "NewSupplierStaggerDelay";
+        public static final String CacheCleanupThreadEnabled = KEYS_PREFIX + "CacheCleanupThreadEnabled";
+        public static final String PollingPeriodForCleanupThread = KEYS_PREFIX + "PollingPeriodForCleanupThread";
 
         public ConfigProperties(String prefix, @SuppressWarnings("rawtypes") Map properties) {
             this.prefix = prefix;
             this.properties = new HashMap<Object, Object>(properties);
         }
 
+        private String formatConfigKey(String key) {
+            return (prefix != null && !prefix.trim().isEmpty() ?
+                    (prefix.endsWith(".") ? prefix : prefix + ".") :
+                    "") + key;
+        }
+
         @Override
         public long getCachedResultsTTL() {
-            return Long.parseLong(properties.get(prefix + ".CachingSupplierConfig." + CachedResultsTTL).toString());
+            return Long.parseLong(properties.get(formatConfigKey(CachedResultsTTL)).toString());
         }
 
         @Override
         public int getMaxConcurrentRunningSuppliers() {
-            return Integer.parseInt(properties.get(prefix + ".CachingSupplierConfig." + MaxConcurrentRunningSuppliers).toString());
+            return Integer.parseInt(properties.get(formatConfigKey(MaxConcurrentRunningSuppliers)).toString());
         }
 
         @Override
         public long getNewSupplierStaggerDelay() {
-            return Long.parseLong(properties.get(prefix + ".CachingSupplierConfig." + NewSupplierStaggerDelay).toString());
+            return Long.parseLong(properties.get(formatConfigKey(NewSupplierStaggerDelay)).toString());
         }
 
         @Override
         public boolean isCacheCleanupThreadEnabled() {
-            return Boolean.parseBoolean(properties.get(prefix + ".CachingSupplierConfig." + CacheCleanupThreadEnabled).toString());
+            return Boolean.parseBoolean(properties.get(formatConfigKey(CacheCleanupThreadEnabled)).toString());
         }
 
         @Override
         public long pollingPeriodForCleanupThread() {
-            return Long.parseLong(properties.get(prefix + ".CachingSupplierConfig." + PollingPeriodForCleanupThread).toString());
+            return Long.parseLong(properties.get(formatConfigKey(PollingPeriodForCleanupThread)).toString());
         }
 
-        @Override
-        public boolean isCachingEnabled() {
-            return getCachedResultsTTL() > 0;
-        }
     }
 }
 

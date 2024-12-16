@@ -113,7 +113,7 @@ instances by client created Ids.  The Ids can be used to query caching efficienc
 
 ```
 CachingSupplierManager<String> manager = new CachingSupplierManager<>();
-manager.registerSupplier("cachingsupplier1", new Supplier<>(() -> {
+manager.registerSupplier("cachingtest1", new Supplier<>(() -> {
     String jsonResult;
 
     // do a lookup of a result object
@@ -125,10 +125,10 @@ manager.registerSupplier("cachingsupplier1", new Supplier<>(() -> {
 ...
 
 // Fetching data
-String jsonResult = manager.get("cachingsupplier1");
+String jsonResult = manager.get("cachingtest1");
 
 // Stats
-System.out.println("\n" + manager.getStatsJson("cachingsupplier1"));
+System.out.println("\n" + manager.getStatsJson("cachingtest1"));
 ```
 
 Please see the unit tests for more coding examples.

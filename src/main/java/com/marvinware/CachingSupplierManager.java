@@ -1,5 +1,6 @@
 package com.marvinware;
 
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Supplier;
@@ -109,9 +110,20 @@ public class CachingSupplierManager<T> {
      * @param resourceId the resource id
      * @return the stats json
      */
-    public String getStatsJson(String resourceId) {
+    public String getJsonStats(String resourceId, boolean reset) {
         CachingSupplier<T> supplier = cachingSuppliersByResourceId.get(resourceId);
-        return supplier.getJsonStats();
+        return supplier.getJsonStats(reset);
+    }
+
+    public void logJsonStats(boolean reset) {
+        for (CachingSupplier<T> supplier : new ArrayList<>(cachingSuppliersByResourceId.values())) {
+            logger.log(System.Logger.Level.INFO, supplier.getJsonStats(reset));
+        }
+    }
+
+    public void resetStats(String resourceId) {
+        CachingSupplier<T> supplier = cachingSuppliersByResourceId.get(resourceId);
+        supplier.resetStats();
     }
 
     /**

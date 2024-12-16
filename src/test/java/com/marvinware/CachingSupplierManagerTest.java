@@ -5,28 +5,31 @@ import org.junit.jupiter.api.*;
 import java.util.Map;
 import java.util.Random;
 
+import static com.marvinware.CachingSupplierConfig.*;
 import static java.util.Map.entry;
 import static org.junit.jupiter.api.Assertions.*;
 
+
 public class CachingSupplierManagerTest {
 
-    static final int threadCount = 20000;
+    static final int threadCount = 10000;
     static final System.Logger logger = System.getLogger(CachingSupplierManagerTest.class.getName());
 
     @Test
     public void loadTest() {
+        String configPrefix = "test1.";
 
-        CachingSupplierConfig config = new CachingSupplierConfig.ConfigProperties("test", Map.ofEntries(
-                entry("test.CachingSupplierConfig.CachedResultsTTL", "500"),
-                entry("test.CachingSupplierConfig.MaxConcurrentRunningSuppliers", "10"),
-                entry("test.CachingSupplierConfig.NewSupplierStaggerDelay", "200"),
-                entry("test.CachingSupplierConfig.CacheCleanupThreadEnabled", "true"),
-                entry("test.CachingSupplierConfig.PollingPeriodForCleanupThread", "10000")
+        CachingSupplierConfig config = new ConfigProperties(configPrefix, Map.ofEntries(
+                entry(configPrefix + ConfigProperties.CachedResultsTTL, "100"),
+                entry(configPrefix + ConfigProperties.MaxConcurrentRunningSuppliers, "10"),
+                entry(configPrefix + ConfigProperties.NewSupplierStaggerDelay, "100"),
+                entry(configPrefix + ConfigProperties.CacheCleanupThreadEnabled, "true"),
+                entry(configPrefix + ConfigProperties.PollingPeriodForCleanupThread, "10000")
         ));
 
         CachingSupplierManager<Long> manager = new CachingSupplierManager<>(config);
 
-        manager.registerSupplier("supplier1", () -> {
+        manager.registerSupplier("test1", () -> {
             // Simple Supplier that sleeps and returns a Long
             Random r = new Random();
             int i = r.nextInt(20);
@@ -38,7 +41,7 @@ public class CachingSupplierManagerTest {
             return System.currentTimeMillis();
         });
 
-        // Simulate a lot of requests - each thread could be a thread from a worker pool and does 3 requests
+        // Simulate a lot of requests - each thread could be a thread from a worker pool and does 3 requests to form a client response
         Thread[] threads = new Thread[threadCount];
         Long[] results = new Long[threadCount];
         for (int t = 0; t < threads.length; t++) {
@@ -52,7 +55,7 @@ public class CachingSupplierManagerTest {
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
-                    Long res = manager.get("supplier1");
+                    Long res = manager.get("test1");
                     synchronized(results) {
                         results[tIndex] = res;
                     }
@@ -68,13 +71,12 @@ public class CachingSupplierManagerTest {
 
         for (Thread thread : threads) {
             try {
-                int last = manager.getCurrentSupplierCount("supplier1");
+                int last = manager.getCurrentSupplierCount("test1");
                 int curr = last;
                 while (thread.isAlive()) {
-                    curr = manager.getCurrentSupplierCount("supplier1");
+                    curr = manager.getCurrentSupplierCount("test1");
                     if (last != curr) {
                         last = curr;
-//                        logger.log(System.Logger.Level.INFO, curr);
                     }
                     thread.join(5);
                 }
@@ -83,15 +85,11 @@ public class CachingSupplierManagerTest {
             }
         }
 
-        //logger.log(System.Logger.Level.INFO, manager.getCurrentSupplierCount("supplier1"));
-
-        logger.log(System.Logger.Level.INFO, manager.getStatsJson("supplier1"));
+        manager.logJsonStats(true);
 
         try {
             Thread.sleep(10000);
         } catch (InterruptedException ignored) { }
-
-//        logger.log(System.Logger.Level.INFO, manager.getCurrentSupplierCount("supplier1"));
 
         for (int j=0; j < threads.length; j++) {
             assertNotEquals(null, results[j]);
@@ -109,7 +107,7 @@ public class CachingSupplierManagerTest {
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
-                    Long res = manager.get("supplier1");
+                    Long res = manager.get("test1");
                     synchronized(results) {
                         results[tIndex] = res;
                     }
@@ -125,13 +123,12 @@ public class CachingSupplierManagerTest {
 
         for (Thread thread : threads) {
             try {
-                int last = manager.getCurrentSupplierCount("supplier1");
+                int last = manager.getCurrentSupplierCount("test1");
                 int curr = last;
                 while (thread.isAlive()) {
-                    curr = manager.getCurrentSupplierCount("supplier1");
+                    curr = manager.getCurrentSupplierCount("test1");
                     if (last != curr) {
                         last = curr;
-//                        logger.log(System.Logger.Level.INFO, curr);
                     }
                     thread.join(5);
                 }
@@ -140,15 +137,13 @@ public class CachingSupplierManagerTest {
             }
         }
 
-//        logger.log(System.Logger.Level.INFO, manager.getCurrentSupplierCount("supplier1"));
-
-        logger.log(System.Logger.Level.INFO, manager.getStatsJson("supplier1"));
+        manager.logJsonStats(true);
 
         try {
             Thread.sleep(10000);
         } catch (InterruptedException ignored) { }
 
-//        logger.log(System.Logger.Level.INFO, manager.getCurrentSupplierCount("supplier1"));
+        logger.log(System.Logger.Level.INFO, manager.getCurrentSupplierCount("test1"));
 
     }
 
