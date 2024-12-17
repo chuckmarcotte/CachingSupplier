@@ -1,6 +1,6 @@
 package com.marvinware;
 
-import com.marvinware.utils.CompletableChainableThreadSafeFutureWithTS;
+import com.marvinware.utils.CompletableChainableFutureWithTS;
 
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
@@ -25,7 +25,7 @@ public class CachingSupplier<T> implements Supplier<T> {
     private volatile int supplierRunCount = 0;
     private long previousFutureStartTime = 0L;
     private SupplierState state = SupplierState.init;
-    private CompletableChainableThreadSafeFutureWithTS<T> sharedFuture;
+    private CompletableChainableFutureWithTS<T> sharedFuture;
 
     /**
      * Instantiates a new Caching supplier.
@@ -67,8 +67,8 @@ public class CachingSupplier<T> implements Supplier<T> {
         T supplierResult;
         long localStartTS = System.currentTimeMillis();
         long delegateStartTS;
-        long supplierTime = -1;
-        long futureTime = -1;
+        long supplierTime = -1L;
+        long futureTime = -1L;
         int localSupplierCount = 0;
 
         boolean fetchNew = processCurrentState();
@@ -123,7 +123,7 @@ public class CachingSupplier<T> implements Supplier<T> {
             supplierRunCount++;
             state = SupplierState.fetching;
             previousFutureStartTime = (sharedFuture == null) ? 0L : sharedFuture.getStartTS();
-            sharedFuture = new CompletableChainableThreadSafeFutureWithTS<>(
+            sharedFuture = new CompletableChainableFutureWithTS<>(
                     sharedFuture != null && !sharedFuture.isDone() ? sharedFuture : null);
             sharedFuture.setStartTS(System.currentTimeMillis());
             return true;
@@ -162,9 +162,7 @@ public class CachingSupplier<T> implements Supplier<T> {
      * @return the boolean
      */
     public synchronized boolean isCacheStale() {
-        return (!config.isCachingEnabled() ||
-                sharedFuture == null ||
-                getAgeOfResult() > config.getCachedResultsTTL()) && notAtMaxSupplierCount();
+        return getResultAge() > config.getCachedResultsTTL();
     }
 
     /**
@@ -172,9 +170,8 @@ public class CachingSupplier<T> implements Supplier<T> {
      *
      * @return the age of result
      */
-    public synchronized long getAgeOfResult() {
-        return (config.isCachingEnabled() && sharedFuture != null &&
-                state == SupplierState.cached) ? System.currentTimeMillis() - sharedFuture.getCompleteTS() : 0;
+    public synchronized long getResultAge() {
+        return (sharedFuture != null) ? sharedFuture.getResultAge() : 0L;
     }
 
     /**
@@ -233,18 +230,18 @@ public class CachingSupplier<T> implements Supplier<T> {
     }
 
     private static class Stats {
-        private static final long LIMIT = Long.MAX_VALUE - 100000;
+        private static final long LIMIT = Long.MAX_VALUE - 100000L;
 
         private final String supplierId;
-        private long resultFromCache = 0;
-        private long resultFromFuture = 0;
-        private long resultFromSupplier = 0;
-        private long maxConcurrentSuppliers = 0;
-        private long maxSupplierTime = 0;
-        private long maxGetTime = 0;
-        private long maxFutureTime = 0;
-        private long totalGetTime = 0;
-        private long totalCnt = 0;
+        private long resultsFromCache = 0L;
+        private long resultsFromFuture = 0L;
+        private long resultsFromSupplier = 0L;
+        private long maxConcurrentSuppliers = 0L;
+        private long maxSupplierTime = 0L;
+        private long maxGetTime = 0L;
+        private long maxFutureTime = 0L;
+        private long totalGetTime = 0L;
+        private long totalCnt = 0L;
 
         /**
          * Instantiates a new Stats.
@@ -260,7 +257,7 @@ public class CachingSupplier<T> implements Supplier<T> {
          */
         public synchronized void incrementResultFromCache() {
             handleRollover();
-            resultFromCache++;
+            resultsFromCache++;
         }
 
         /**
@@ -268,7 +265,7 @@ public class CachingSupplier<T> implements Supplier<T> {
          */
         public synchronized void incrementResultFromCachingSupplier() {
             handleRollover();
-            resultFromFuture++;
+            resultsFromFuture++;
         }
 
         /**
@@ -276,7 +273,7 @@ public class CachingSupplier<T> implements Supplier<T> {
          */
         public synchronized void incrementResultFromSupplier() {
             handleRollover();
-            resultFromSupplier++;
+            resultsFromSupplier++;
         }
 
         /**
@@ -284,9 +281,9 @@ public class CachingSupplier<T> implements Supplier<T> {
          */
         public synchronized void handleRollover() {
             if (
-                    resultFromCache > LIMIT ||
-                    resultFromFuture > LIMIT ||
-                    resultFromSupplier > LIMIT ||
+                    resultsFromCache > LIMIT ||
+                    resultsFromFuture > LIMIT ||
+                    resultsFromSupplier > LIMIT ||
                     totalGetTime > LIMIT ||
                     maxConcurrentSuppliers > LIMIT ||
                     totalCnt > LIMIT
@@ -296,15 +293,15 @@ public class CachingSupplier<T> implements Supplier<T> {
         }
 
         public synchronized void resetStats() {
-            resultFromCache = 0;
-            resultFromFuture = 0;
-            resultFromSupplier = 0;
-            maxConcurrentSuppliers = 0;
-            maxSupplierTime = 0;
-            maxFutureTime = 0;
-            maxGetTime = 0;
-            totalGetTime = 0;
-            totalCnt = 0;
+            resultsFromCache = 0L;
+            resultsFromFuture = 0L;
+            resultsFromSupplier = 0L;
+            maxConcurrentSuppliers = 0L;
+            maxSupplierTime = 0L;
+            maxFutureTime = 0L;
+            maxGetTime = 0L;
+            totalGetTime = 0L;
+            totalCnt = 0L;
         }
 
         /**
@@ -313,9 +310,9 @@ public class CachingSupplier<T> implements Supplier<T> {
          * @return the json stats
          */
         public synchronized String getJsonStats() {
-            return "{\"supplierId\":\"" + supplierId + "\",\"count\":" + totalCnt + ",\"resultFromCache\":" + resultFromCache +
-                    ",\"resultFromFuture\":" + resultFromFuture + ",\"resultFromSupplier\":" + resultFromSupplier +
-                    ",\"cacheHitRatio\":" + String.format("%f", (totalCnt == 0 ? 0 : (resultFromCache + resultFromFuture) / (double) totalCnt)) +
+            return "{\"supplierId\":\"" + supplierId + "\",\"count\":" + totalCnt + ",\"resultsFromCache\":" + resultsFromCache +
+                    ",\"resultsFromFuture\":" + resultsFromFuture + ",\"resultsFromSupplier\":" + resultsFromSupplier +
+                    ",\"cacheHitRatio\":" + String.format("%f", (totalCnt == 0 ? 0 : (resultsFromCache + resultsFromFuture) / (double) totalCnt)) +
                     ",\"maxConcurrentSuppliers\":" + maxConcurrentSuppliers + ",\"maxSupplierTime\":" + maxSupplierTime + ",\"maxFutureTime\":" + maxFutureTime + ",\"maxGetTime\":" + maxGetTime + ",\"avgGetTime\":" +
                     (totalCnt == 0 ? 0 : (totalGetTime / totalCnt)) + "}";
         }

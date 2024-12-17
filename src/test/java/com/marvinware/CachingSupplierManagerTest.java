@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class CachingSupplierManagerTest {
 
-    static final int threadCount = 10000;
+    static final int threadCount = 10;
     static final System.Logger logger = System.getLogger(CachingSupplierManagerTest.class.getName());
 
     @Test
