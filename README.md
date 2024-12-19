@@ -1,8 +1,9 @@
 # NOTE: This project is still pre-release.  It has not been released yet.
 
 # Todo:
-* JavaDoc comments in all source files
-* Reasonable junit tests
+
+* Additional junit tests with:
+Mock testing, 80% code coverage.
 
 # CachingSupplier
 A package to control "perfect storm" over-loading of shared resources
